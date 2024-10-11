@@ -4,7 +4,7 @@ import pygame
 
 # pygame setup
 pygame.init()
-screen = pygame.display.set_mode((1920, 1080))
+screen = pygame.display.set_mode((500, 650))
 clock = pygame.time.Clock()
 running = True
 dt = 0
@@ -24,6 +24,11 @@ def draw_rows_of_circles(surface):
         x_start = (surface.get_width() - (row * spacing)) / 2
         for col in range(row):
             pygame.draw.circle(surface, "white", (x_start + col * spacing, y_offset - row * spacing), circle_radius)
+
+class plinko_bal:
+    def __init__(self):
+        pass
+
 
 # Draw the circles on the draw_surface
 draw_rows_of_circles(draw_surface)
