@@ -2,12 +2,16 @@ from math import *
 from random import randint
 import pygame
 
+
 # pygame setup
 pygame.init()
 screen = pygame.display.set_mode((500, 650))
 clock = pygame.time.Clock()
 running = True
 dt = 0
+class plinko_bal:
+    def __init__(self,value):
+        self.value= value
 
 # Create a surface to draw on (same size as the screen)
 draw_surface = pygame.Surface(screen.get_size())
@@ -25,11 +29,10 @@ def draw_rows_of_circles(surface):
         for col in range(row):
             pygame.draw.circle(surface, "white", (x_start + col * spacing, y_offset - row * spacing), circle_radius)
 
-class plinko_bal:
-    def __init__(self):
-        pass
-
-
+def draw_button(surface):
+    button_rect = pygame.Rect(300, 250, 200, 80)  # x, y, width, height
+    button_color = LIGHT_BLUE
+    button_text = font.render("Click Me!", True, BLACK)
 # Draw the circles on the draw_surface
 draw_rows_of_circles(draw_surface)
 while running:
