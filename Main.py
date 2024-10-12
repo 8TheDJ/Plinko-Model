@@ -10,7 +10,7 @@ screen = pygame.display.set_mode((500, 650))
 clock = pygame.time.Clock()
 running = True
 dt = 0
-font= pygame.font.SysFont("timesnewroman, 30")
+font= pygame.font.SysFont("timesnewroman", 30)
 class plinko_bal:
     def __init__(self, x, y):
         self.x= x
