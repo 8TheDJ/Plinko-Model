@@ -14,13 +14,14 @@ running = True
 objects = []
 balls = []
 coordlist=[]
+white_circle_radius = 4
 gravity = 0.2
 class plinko_bal:
     def __init__(self, x, y):
         # starting conditions of ball
         self.x= x
         self.y= y
-        self.radius = 6
+        self.radius = 2
         self.color = (255,0,0)
         self.velocity_x= 0
         self.velocity_y= 0 
@@ -39,6 +40,21 @@ class plinko_bal:
         if self.y + self.radius > screen.get_height():
             self.y = screen.get_height() - self.radius  # Stop at the bottom
             self.velocity_y = 0  # Stop moving
+        for (circle_x, circle_y) in coordlist:  # coordlist contains the white circle positions
+            # Calculate the distance between the ball and the circle
+            distance = sqrt((self.x - circle_x)**2 + (self.y - circle_y)**2)
+
+            # Check for collision
+            if distance < self.radius + white_circle_radius:
+            # Calculate the normal vector
+                normal_x = (self.x - circle_x) / distance
+                normal_y = (self.y - circle_y) / distance
+
+                # Reflect the velocity
+                dot_product = self.velocity_x * normal_x + self.velocity_y * normal_y
+                self.velocity_x -= 2 * dot_product * normal_x
+                self.velocity_y -= 2 * dot_product * normal_y
+
 
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.radius)
@@ -104,23 +120,21 @@ draw_surface = pygame.Surface(screen.get_size())
 def draw_rows_of_circles(surface):
     rows_amount = 16
     spacing = 25  # Spacing between circles
-    circle_radius = 4  # Radius of each circle
-    y_offset = surface.get_height() / 2 - ((rows_amount * spacing) / 2 )  # Center the tower vertically
+    y_offset = surface.get_height() / 2 + ((rows_amount * spacing) / 2 + surface.get_height() / 16)  # Center the tower vertically
 
     for row in range(3, rows_amount + 3):
         # Calculate the starting x position to center the row horizontally
         x_start = (surface.get_width() - (row * spacing)) / 2
         for col in range(row):
-            ballposition=(x_start*spacing, y_offset-row*spacing)
-            pygame.draw.circle(surface, "white", (x_start + col * spacing, y_offset - row * spacing), circle_radius)
+            ballposition=(x_start+ col *spacing, y_offset-row*spacing)
             coordlist.append(ballposition)
+            pygame.draw.circle(surface, "white", (x_start + col * spacing, y_offset - row * spacing), white_circle_radius)
+            
 
 # Draw the circles on the draw_surface
 draw_rows_of_circles(draw_surface)
 
-print("witte ballen coordinates, itay no ballss broek uit.")
-for coordinate in coordlist:
-    print(coordinate)
+
 while running:
 
     # poll for events
