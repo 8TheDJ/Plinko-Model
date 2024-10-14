@@ -46,7 +46,7 @@ class plinko_bal:
 class Button():
     def __init__(self, x, y, width, height, buttonText="Click Me!", onclickFunction=None, onePress=False):
         self.x = 300
-        self.y = 250
+        self.y = 10
         self.width = 200
         self.height = 80
         self.onclickFunction = onclickFunction
