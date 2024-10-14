@@ -13,6 +13,7 @@ font= pygame.font.SysFont("timesnewroman",30)
 running = True
 objects = []
 balls = []
+coordlist=[]
 gravity = 0.2
 class plinko_bal:
     def __init__(self, x, y):
@@ -41,7 +42,6 @@ class plinko_bal:
 
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.radius)
-
 
 class Button():
     def __init__(self, x, y, width, height, buttonText="Click Me!", onclickFunction=None, onePress=False):
