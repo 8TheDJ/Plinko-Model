@@ -105,17 +105,22 @@ def draw_rows_of_circles(surface):
     rows_amount = 16
     spacing = 25  # Spacing between circles
     circle_radius = 4  # Radius of each circle
-    y_offset = surface.get_height() / 2 + ((rows_amount * spacing) / 2 + surface.get_height() / 16)  # Center the tower vertically
+    y_offset = surface.get_height() / 2 - ((rows_amount * spacing) / 2 )  # Center the tower vertically
 
     for row in range(3, rows_amount + 3):
         # Calculate the starting x position to center the row horizontally
         x_start = (surface.get_width() - (row * spacing)) / 2
         for col in range(row):
+            ballposition=(x_start*spacing, y_offset-row*spacing)
             pygame.draw.circle(surface, "white", (x_start + col * spacing, y_offset - row * spacing), circle_radius)
+            coordlist.append(ballposition)
 
 # Draw the circles on the draw_surface
 draw_rows_of_circles(draw_surface)
 
+print("witte ballen coordinates, itay no ballss broek uit.")
+for coordinate in coordlist:
+    print(coordinate)
 while running:
 
     # poll for events
@@ -146,6 +151,7 @@ while running:
 
     #updating frame rate
     fpsClock.tick(fps)
+
 
 pygame.quit()
 sys.quit()
