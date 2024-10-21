@@ -124,7 +124,7 @@ def draw_rows_of_circles(surface):
         x_start = (surface.get_width() - (row * spacing)) / 2
         for col in range(row):
             circle_x = x_start + col * spacing
-            circle_y = y_offset - row * spacing
+            circle_y = y_offset - (rows_amount + 3 - row) * spacing
             coordlist.append((circle_x, circle_y))  # Store the circle positions for collision detection
             pygame.draw.circle(surface, "white", (int(circle_x), int(circle_y)), circle_radius)
 
