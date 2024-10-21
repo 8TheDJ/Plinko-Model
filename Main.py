@@ -43,7 +43,6 @@ class plinko_bal:
         if self.is_stuck():
             self.nudge_ball()
 
-
         # Apply gravity to the vertical velocity
         self.velocity_y += gravity
         # Update the ball's position
@@ -54,6 +53,8 @@ class plinko_bal:
         if self.y + self.radius > screen.get_height():
             self.y = screen.get_height() - self.radius
             self.velocity_y = -self.bounce_strength * self.bounce_strength  # Bounce the ball back up
+        
+        #if self.x + self.radius >
 
         for (circle_x, circle_y) in coordlist:  # coordlist contains the white circle positions
             # Calculate the distance between the ball and the circle
@@ -131,7 +132,7 @@ class Button:
 
 def spawn_plinko_ball():
     # Spawn a Plinko ball at a random position at the top of the screen
-    new_ball = plinko_bal(randint(225, 300), 50)
+    new_ball = plinko_bal(randint(225, 265), 50)
     balls.append(new_ball)
 
 # Create the button
