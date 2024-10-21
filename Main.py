@@ -16,14 +16,6 @@ objects = []
 balls = []
 coordlist=[]
 gravity = 0.1
-def calculate_lines(coordlist):
-    first=coordlist[0]
-    third=coordlist[2]
-    fourth=coordlist[3]
-    seventh=coordlist[6]
-    rc1=((first.y-fourth.y)/(first.x-fourth.x))
-    rc2=((third.y-seventh)/(third.x-seventh.x))
-
 
 
 class plinko_bal:
@@ -63,7 +55,14 @@ class plinko_bal:
             self.y = screen.get_height() - self.radius
             self.velocity_y = -self.bounce_strength * self.bounce_strength  # Bounce the ball back up
         
-        #if self.x + self.radius >
+        first=coordlist[0]
+        third=coordlist[2]
+        fourth=coordlist[3]
+        seventh=coordlist[6]
+        rc1=((first.y-fourth.y)/(first.x-fourth.x))
+        rc2=((third.y-seventh)/(third.x-seventh.x))
+        if circle_y == circle_x * rc1 + first.y  - (rc1 * first.x) or circle_y == circle_x * rc2 + first.y  - (rc2 * first.x):
+        #hier
 
         for (circle_x, circle_y) in coordlist:  # coordlist contains the white circle positions
             # Calculate the distance between the ball and the circle
