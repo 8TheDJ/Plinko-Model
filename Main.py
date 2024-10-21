@@ -4,6 +4,7 @@ import pygame
 import sys
 
 # Pygame setup
+circle_radius = 4  # Radius of each circle
 pygame.init()
 screen = pygame.display.set_mode((500, 650))
 clock = pygame.time.Clock()
@@ -14,7 +15,7 @@ running = True
 objects = []
 balls = []
 coordlist=[]
-gravity = 0.2
+gravity = 0.1
 
 class plinko_bal:
     def __init__(self, x, y):
@@ -25,7 +26,7 @@ class plinko_bal:
         self.color = (255,0,0)
         self.velocity_x= 0
         self.velocity_y= 0 
-        self.bounce_strength = 55
+        self.bounce_strength = 35
         self.collision_cooldown = 0  # Cooldown timer to avoid multiple collisions
 
     def update(self):
@@ -49,7 +50,7 @@ class plinko_bal:
             distance = sqrt((self.x - circle_x)**2 + (self.y - circle_y)**2)
 
             # Check for collision
-            if distance < self.radius + white_circle_radius:
+            if distance < self.radius + circle_radius:
             # Calculate the normal vector
                 normal_x = (self.x - circle_x) / distance
                 normal_y = (self.y - circle_y) / distance
@@ -113,20 +114,20 @@ def spawn_plinko_ball():
 # Create the button
 Button(150, 500, 200, 50, "Click Me!", spawn_plinko_ball, False)
 
-# Function to draw the rows of circles
+# Function to draw the rows of circles and update their positions for collision
 def draw_rows_of_circles(surface):
     rows_amount = 16
     spacing = 25  # Spacing between circles
-    circle_radius = 4  # Radius of each circle
-    y_offset = surface.get_height() / 2 - ((rows_amount * spacing) / 2 )  # Center the tower vertically
+    y_offset = surface.get_height() - ((rows_amount * spacing) / 4)  # Center the tower vertically
 
     for row in range(3, rows_amount + 3):
         x_start = (surface.get_width() - (row * spacing)) / 2
         for col in range(row):
-            ballposition=(x_start*spacing, y_offset-row*spacing)
-            pygame.draw.circle(surface, "white", (x_start + col * spacing, y_offset - row * spacing), circle_radius)
-            coordlist.append(ballposition)
-            pygame.draw.circle(surface, "white", (x_start + col * spacing, y_offset - row * spacing), white_circle_radius)
+            circle_x = x_start + col * spacing
+            circle_y = y_offset - row * spacing
+            coordlist.append((circle_x, circle_y))  # Store the circle positions for collision detection
+            pygame.draw.circle(surface, "white", (int(circle_x), int(circle_y)), circle_radius)
+
             
 
 # Draw the circles on a surface to rotate later
@@ -143,18 +144,14 @@ while running:
 
     screen.fill("black")
 
-    # Rotate the draw_surface by 180 degrees and blit it to the screen
-    rotated_surface = pygame.transform.rotate(draw_surface, 180)
-    screen.blit(rotated_surface, (0, 0))
+
+
+    screen.blit(draw_surface, (0, 0))
 
     # Update and draw each Plinko ball
     for ball in balls:
         ball.update()
 
-        # Check for collision with each white ball, only if the cooldown has expired
-        if ball.collision_cooldown == 0:
-            for coordinate in coordlist:
-                handle_collision(ball, coordinate)
 
         ball.draw(screen)
 
