@@ -20,8 +20,10 @@ def calculate_lines(coordlist):
     first=coordlist[0]
     third=coordlist[2]
     fourth=coordlist[3]
-    sixth=coordlist[6]
-    line1=(first.y-third.y/first.x-third.x)
+    seventh=coordlist[6]
+    rc1=((first.y-fourth.y)/(first.x-fourth.x))
+    rc2=((third.y-seventh)/(third.x-seventh.x))
+
 
 
 class plinko_bal:
