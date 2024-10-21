@@ -26,10 +26,24 @@ class plinko_bal:
         self.color = (255,0,0)
         self.velocity_x= 0
         self.velocity_y= 0 
-        self.bounce_strength = 35
+        self.bounce_strength = 0.5
         self.collision_cooldown = 0  # Cooldown timer to avoid multiple collisions
 
+        self.previous_positions = []
+        self.stuck_threshold = 5  # Number of frames to check if the ball is stuck
+
     def update(self):
+
+        # Track the ball's position to detect if it's stuck
+        self.previous_positions.append((self.x, self.y))
+        if len(self.previous_positions) > self.stuck_threshold:
+            self.previous_positions.pop(0)
+
+        # Check if the ball is stuck in the same position
+        if self.is_stuck():
+            self.nudge_ball()
+
+
         # Apply gravity to the vertical velocity
         self.velocity_y += gravity
         # Update the ball's position
@@ -39,12 +53,8 @@ class plinko_bal:
         # Basic floor collision
         if self.y + self.radius > screen.get_height():
             self.y = screen.get_height() - self.radius
-            self.velocity_y = -self.bounce_strength + 50  # Bounce the ball back up
+            self.velocity_y = -self.bounce_strength * self.bounce_strength  # Bounce the ball back up
 
-        # Check for collision with the bottom of the screen
-        if self.y + self.radius > screen.get_height():
-            self.y = screen.get_height() - self.radius  # Stop at the bottom
-            self.velocity_y = 0  # Stop moving
         for (circle_x, circle_y) in coordlist:  # coordlist contains the white circle positions
             # Calculate the distance between the ball and the circle
             distance = sqrt((self.x - circle_x)**2 + (self.y - circle_y)**2)
@@ -57,14 +67,27 @@ class plinko_bal:
 
                 # Reflect the velocity
                 dot_product = self.velocity_x * normal_x + self.velocity_y * normal_y
-                self.velocity_x -= 2 * dot_product * normal_x
-                self.velocity_y -= 2 * dot_product * normal_y
+                self.velocity_x -=  1.5 *dot_product * normal_x
+                self.velocity_y -=  1.5 *dot_product * normal_y
 
+                # Apply a slight offset to prevent the ball from getting stuck in repeated collisions
+                self.x += normal_x * 0.1
+                self.y += normal_y * 0.1
 
         # Decrease the collision cooldown timer
         if self.collision_cooldown > 0:
             self.collision_cooldown -= 1
+            
+    def is_stuck(self):
+        # Check if the ball has been in approximately the same position for several frames
+        if len(self.previous_positions) < self.stuck_threshold:
+            return False
+        x_positions, y_positions = zip(*self.previous_positions)
+        return max(x_positions) - min(x_positions) < 1 and max(y_positions) - min(y_positions) < 1
 
+    def nudge_ball(self):
+        # Apply a slight nudge to the left or right to get the ball moving
+        self.velocity_x += 0.1 if randint(0, 1) == 0 else -0.1
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.radius)
 
