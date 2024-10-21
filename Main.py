@@ -14,19 +14,29 @@ font = pygame.font.SysFont("timesnewroman", 30)
 running = True
 objects = []
 balls = []
-coordlist=[]
+coordlist = []
 gravity = 0.1
 
+# Function to calculate slope and intercept of a line
+def calculate_line_equation(point1, point2):
+    slope = (point2[1] - point1[1]) / (point2[0] - point1[0])
+    intercept = point1[1] - slope * point1[0]
+    return slope, intercept
+
+# Function to check if the ball is on or near the line
+def is_on_line(x, y, slope, intercept):
+    line_y = slope * x + intercept
+    return abs(y - line_y) < 5  # Adjust the threshold for better detection
 
 class plinko_bal:
     def __init__(self, x, y):
-        # starting conditions of ball
-        self.x= x
-        self.y= y
+        # Starting conditions of the ball
+        self.x = x
+        self.y = y
         self.radius = 6
-        self.color = (255,0,0)
-        self.velocity_x= 0
-        self.velocity_y= 0 
+        self.color = (255, 0, 0)
+        self.velocity_x = 0
+        self.velocity_y = 0
         self.bounce_strength = 0.5
         self.collision_cooldown = 0  # Cooldown timer to avoid multiple collisions
 
@@ -34,7 +44,6 @@ class plinko_bal:
         self.stuck_threshold = 5  # Number of frames to check if the ball is stuck
 
     def update(self):
-
         # Track the ball's position to detect if it's stuck
         self.previous_positions.append((self.x, self.y))
         if len(self.previous_positions) > self.stuck_threshold:
@@ -54,39 +63,33 @@ class plinko_bal:
         if self.y + self.radius > screen.get_height():
             self.y = screen.get_height() - self.radius
             self.velocity_y = -self.bounce_strength * self.bounce_strength  # Bounce the ball back up
-        
-        first=coordlist[0]
-        third=coordlist[2]
-        fourth=coordlist[3]
-        seventh=coordlist[6]
-        rc1=((first.y-fourth.y)/(first.x-fourth.x))
-        rc2=((third.y-seventh)/(third.x-seventh.x))
-        if circle_y == circle_x * rc1 + first.y  - (rc1 * first.x) or circle_y == circle_x * rc2 + first.y  - (rc2 * first.x):
-        #hier
 
-        for (circle_x, circle_y) in coordlist:  # coordlist contains the white circle positions
+        for (circle_x, circle_y) in coordlist:
             # Calculate the distance between the ball and the circle
             distance = sqrt((self.x - circle_x)**2 + (self.y - circle_y)**2)
-
-            # Check for collision
+            # Check for collision with the circle
             if distance < self.radius + circle_radius:
-            # Calculate the normal vector
+                # Calculate the normal vector
                 normal_x = (self.x - circle_x) / distance
                 normal_y = (self.y - circle_y) / distance
 
                 # Reflect the velocity
                 dot_product = self.velocity_x * normal_x + self.velocity_y * normal_y
-                self.velocity_x -=  1.5 *dot_product * normal_x
-                self.velocity_y -=  1.5 *dot_product * normal_y
+                self.velocity_x -= 1.5 * dot_product * normal_x
+                self.velocity_y -= 1.5 * dot_product * normal_y
 
                 # Apply a slight offset to prevent the ball from getting stuck in repeated collisions
                 self.x += normal_x * 0.1
                 self.y += normal_y * 0.1
 
+        # Check for collision with the invisible borders
+        if is_on_line(self.x, self.y, left_slope, left_intercept) or is_on_line(self.x, self.y, right_slope, right_intercept):
+            print("yabadabadoo")  # Ball hit the invisible border!
+
         # Decrease the collision cooldown timer
         if self.collision_cooldown > 0:
             self.collision_cooldown -= 1
-            
+
     def is_stuck(self):
         # Check if the ball has been in approximately the same position for several frames
         if len(self.previous_positions) < self.stuck_threshold:
@@ -97,9 +100,33 @@ class plinko_bal:
     def nudge_ball(self):
         # Apply a slight nudge to the left or right to get the ball moving
         self.velocity_x += 0.1 if randint(0, 1) == 0 else -0.1
+
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.radius)
 
+# Function to draw the rows of circles and update their positions for collision
+def draw_rows_of_circles(surface):
+    rows_amount = 16
+    spacing = 25  # Spacing between circles
+    y_offset = surface.get_height() - ((rows_amount * spacing) / 4)  # Center the tower vertically
+
+    for row in range(3, rows_amount + 3):
+        x_start = (surface.get_width() - (row * spacing)) / 2
+        for col in range(row):
+            circle_x = x_start + col * spacing
+            circle_y = y_offset - (rows_amount + 3 - row) * spacing
+            coordlist.append((circle_x, circle_y))  # Store the circle positions for collision detection
+            pygame.draw.circle(surface, "white", (int(circle_x), int(circle_y)), circle_radius)
+
+# Draw the circles on a surface to rotate later
+draw_surface = pygame.Surface(screen.get_size())
+draw_rows_of_circles(draw_surface)
+
+# Calculate the line equations for the sides of the triangle
+left_slope, left_intercept = calculate_line_equation(coordlist[0], coordlist[3])
+right_slope, right_intercept = calculate_line_equation(coordlist[2], coordlist[6])
+
+# Function to spawn a new Plinko ball
 class Button:
     def __init__(self, x, y, width, height, buttonText="Click Me!", onclickFunction=None, onePress=False):
         self.x = 300
@@ -137,54 +164,25 @@ class Button:
             self.buttonRect.height / 2 - self.buttonSurf.get_rect().height / 2
         ])
         screen.blit(self.buttonSurface, self.buttonRect)
-
+        
 def spawn_plinko_ball():
-    # Spawn a Plinko ball at a random position at the top of the screen
     new_ball = plinko_bal(randint(225, 265), 50)
     balls.append(new_ball)
 
-# Create the button
+# Create a button to spawn Plinko balls
 Button(150, 500, 200, 50, "Click Me!", spawn_plinko_ball, False)
 
-# Function to draw the rows of circles and update their positions for collision
-def draw_rows_of_circles(surface):
-    rows_amount = 16
-    spacing = 25  # Spacing between circles
-    y_offset = surface.get_height() - ((rows_amount * spacing) / 4)  # Center the tower vertically
-
-    for row in range(3, rows_amount + 3):
-        x_start = (surface.get_width() - (row * spacing)) / 2
-        for col in range(row):
-            circle_x = x_start + col * spacing
-            circle_y = y_offset - (rows_amount + 3 - row) * spacing
-            coordlist.append((circle_x, circle_y))  # Store the circle positions for collision detection
-            pygame.draw.circle(surface, "white", (int(circle_x), int(circle_y)), circle_radius)
-
-            
-
-# Draw the circles on a surface to rotate later
-draw_surface = pygame.Surface(screen.get_size())
-draw_rows_of_circles(draw_surface)
-
-print("witte ballen coordinates, itay no ballss broek uit.")
-for coordinate in coordlist:
-    print(coordinate)
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
     screen.fill("black")
-
-
-
     screen.blit(draw_surface, (0, 0))
 
     # Update and draw each Plinko ball
     for ball in balls:
         ball.update()
-
-
         ball.draw(screen)
 
     # Process the buttons
