@@ -17,10 +17,11 @@ balls = []
 coordlist = []
 gravity = 0.1
 
+
 # Function to calculate slope and intercept of a line
 def calculate_line_equation(point1, point2):
     slope = (point2[1] - point1[1]) / (point2[0] - point1[0])
-    intercept = point1[1] - slope * point1[0]
+    intercept = point1[1] - slope * point1[0] 
     return slope, intercept
 
 # Function to check if the ball is on or near the line
@@ -83,8 +84,10 @@ class plinko_bal:
                 self.y += normal_y * 0.1
 
         # Check for collision with the invisible borders
-        if is_on_line(self.x, self.y, left_slope, left_intercept) or is_on_line(self.x, self.y, right_slope, right_intercept):
-            print("yabadabadoo")  # Ball hit the invisible border!
+        # maken zodat de bal alleen de border herkent buiten de spawn box, door een voorwarde te stellen dat de bal hem niet herkent tussen de coordinaten van de spawn doos
+        if (is_on_line(self.x, self.y, left_slope, left_intercept) or is_on_line(self.x, self.y, right_slope, right_intercept)) and (self.x>265 and self.x<225):
+            print("-----")
+            print("00000")
 
         # Decrease the collision cooldown timer
         if self.collision_cooldown > 0:
