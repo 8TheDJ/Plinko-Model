@@ -29,6 +29,21 @@ def is_on_line(x, y, slope, intercept):
     line_y = slope * x + intercept
     return abs(y - line_y) < 5  # Adjust the threshold for better detection
 
+# Function to reflect the velocity of the ball when it hits a line
+def reflect_velocity(ball, slope):
+    # Calculate the normal vector of the line
+    normal_x = -slope  # The slope of the normal line is -1/slope of the line
+    normal_y = 1
+    
+    # Normalize the normal vector
+    length = sqrt(normal_x ** 2 + normal_y ** 2)
+    normal_x /= length
+    normal_y /= length
+
+    # Reflect the velocity over the normal
+    dot_product = ball.velocity_x * normal_x + ball.velocity_y * normal_y
+    ball.velocity_x -= 2 * dot_product * normal_x
+    ball.velocity_y -= 2 * dot_product * normal_y
 class plinko_bal:
     def __init__(self, x, y):
         # Starting conditions of the ball
@@ -67,7 +82,7 @@ class plinko_bal:
 
         for (circle_x, circle_y) in coordlist:
             # Calculate the distance between the ball and the circle
-            distance = sqrt((self.x - circle_x)**2 + (self.y - circle_y)**2)
+            distance = sqrt((self.x - circle_x) ** 2 + (self.y - circle_y) ** 2)
             # Check for collision with the circle
             if distance < self.radius + circle_radius:
                 # Calculate the normal vector
@@ -84,14 +99,24 @@ class plinko_bal:
                 self.y += normal_y * 0.1
 
         # Check for collision with the invisible borders
-        # maken zodat de bal alleen de border herkent buiten de spawn box, door een voorwarde te stellen dat de bal hem niet herkent tussen de coordinaten van de spawn doos
-        if (is_on_line(self.x, self.y, left_slope, left_intercept) or is_on_line(self.x, self.y, right_slope, right_intercept)) and (self.x>265 and self.x<225):
-            print("-----")
-            print("00000")
+        if (is_on_line(self.x, self.y, left_slope, left_intercept) or is_on_line(self.x, self.y, right_slope, right_intercept)) and (self.x > 265 or self.x < 225):
+            if is_on_line(self.x, self.y, left_slope, left_intercept):
+                reflect_velocity(self, left_slope)
+            elif is_on_line(self.x, self.y, right_slope, right_intercept):
+                reflect_velocity(self, right_slope)
 
-        # Decrease the collision cooldown timer
-        if self.collision_cooldown > 0:
-            self.collision_cooldown -= 1
+            # Apply a small offset to prevent continuous collisions with the line
+            self.x += self.velocity_x * 0.1
+            self.y += self.velocity_y * 0.1
+
+        # Check for collision with the invisible vertical boundaries (only above the top row)
+        if self.y < top_row_y and (self.x <= left_vertical_x or self.x >= right_vertical_x):
+            # Reflect velocity when hitting the vertical lines
+            self.velocity_x = -self.velocity_x  # Reverse horizontal velocity
+
+            # Apply a small offset to prevent continuous collisions with the line
+            self.x += self.velocity_x * 0.1
+
 
     def is_stuck(self):
         # Check if the ball has been in approximately the same position for several frames
@@ -128,7 +153,13 @@ draw_rows_of_circles(draw_surface)
 # Calculate the line equations for the sides of the triangle
 left_slope, left_intercept = calculate_line_equation(coordlist[0], coordlist[3])
 right_slope, right_intercept = calculate_line_equation(coordlist[2], coordlist[6])
+# Vertical boundaries based on the first and third balls
+left_vertical_x = coordlist[0][0]  # x-coordinate of the first ball
+right_vertical_x = coordlist[2][0]  # x-coordinate of the third ball
 
+# Top of the screen
+top_y = 0  # y-coordinate of the top of the screen
+top_row_y = coordlist[2][1]  # The y-coordinate of the top row (third ball)
 # Function to spawn a new Plinko ball
 class Button:
     def __init__(self, x, y, width, height, buttonText="Click Me!", onclickFunction=None, onePress=False):
