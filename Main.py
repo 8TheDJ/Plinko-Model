@@ -16,7 +16,8 @@ objects = []
 balls = []
 coordlist = []
 gravity = 0.1
-
+#to do 
+# meer commentaar invoegen, alle code logisch ordenen, score systeem bouwen, de data opslaan in een .json file, daarna verslag invoeren
 
 # Function to calculate slope and intercept of a line
 def calculate_line_equation(point1, point2):
@@ -99,12 +100,12 @@ class plinko_bal:
                 self.y += normal_y * 0.1
 
         # Check for collision with the invisible borders
-        if (is_on_line(self.x, self.y, left_slope, left_intercept) or is_on_line(self.x, self.y, right_slope, right_intercept)) and (self.x > 265 or self.x < 225):
+        if (is_on_line(self.x, self.y, left_slope, left_intercept) or is_on_line(self.x, self.y, right_slope, right_intercept)) and (self.x > 256 or self.x < 219):
             if is_on_line(self.x, self.y, left_slope, left_intercept):
                 reflect_velocity(self, left_slope)
             elif is_on_line(self.x, self.y, right_slope, right_intercept):
                 reflect_velocity(self, right_slope)
-
+ 
             # Apply a small offset to prevent continuous collisions with the line
             self.x += self.velocity_x * 0.1
             self.y += self.velocity_y * 0.1
@@ -200,7 +201,7 @@ class Button:
         screen.blit(self.buttonSurface, self.buttonRect)
         
 def spawn_plinko_ball():
-    new_ball = plinko_bal(randint(225, 265), 50)
+    new_ball = plinko_bal(randint(220, 255), 50)
     balls.append(new_ball)
 
 # Create a button to spawn Plinko balls
