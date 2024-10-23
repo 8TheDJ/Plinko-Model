@@ -53,7 +53,7 @@ def reflect_velocity(ball, slope):
     ball.velocity_x -= 2 * dot_product * normal_x
     ball.velocity_y -= 2 * dot_product * normal_y
 class plinko_bal:
-    def __init__(self, x, y):
+    def __init__(self, x, y, value):
         # Starting conditions of the ball
         self.x = x
         self.y = y
@@ -63,7 +63,8 @@ class plinko_bal:
         self.velocity_y = 0
         self.bounce_strength = 0.5
         self.collision_cooldown = 0  # Cooldown timer to avoid multiple collisions
-        money_worth = 0
+        self.value = value  # Store the value from the slider
+        self.font = font
 
         self.previous_positions = []
         self.stuck_threshold = 5  # Number of frames to check if the ball is stuck
@@ -158,6 +159,9 @@ class plinko_bal:
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, (self.x,self.y), self.radius)
 
+        # Render the value as text and draw it on top of the ball
+        value_text = self.font.render(str(self.value), True, (255, 255, 255))  # White color for text
+        surface.blit(value_text, (self.x - self.radius, self.y - self.radius))  # Center the text on the ball
 # Function to draw the rows of circles and update their positions for collision
 def draw_rows_of_circles(surface):
     rows_amount = 16
@@ -190,11 +194,17 @@ top_y = 0  # y-coordinate of the top of the screen
 top_row_y = coordlist[2][1]  # The y-coordinate of the top row (third ball)
 
 # Function to spawn a new Plinko ball
-def spawn_plinko_ball():
+def spawn_plinko_ball(slider_value):
     global ballcount
-    new_ball = plinko_bal(randint(220, 255), 50)
+    slider_value = slider.get_value()  # Assuming there's a method to get the slider value
+    new_ball = plinko_bal(randint(220, 255), 50,slider_value)
     balls.append(new_ball)
     ballcount += 1
+
+def on_button_click():
+    slider_value = slider.get_value()  # Get the slider value here
+    spawn_plinko_ball(slider_value)    # Pass the slider value to spawn_plinko_ball
+
 def display_counts():
     # Display total ball count
     count_surface = font.render(f"Balls: {ballcount}", True, (255, 255, 255))  # White text
@@ -253,7 +263,7 @@ class Button:
     
 
 # Create a button to spawn Plinko balls
-Button(150, 500, 200, 50, "Click Me!", spawn_plinko_ball, False)
+Button(150, 500, 200, 50, "Click Me!", on_button_click, False)
 class Slider:
     def __init__(self, x, y, width, min_val, max_val, start_val):
         self.rect = pygame.Rect(x, y, width, 10)
