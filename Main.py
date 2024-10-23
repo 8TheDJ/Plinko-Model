@@ -62,6 +62,7 @@ class plinko_bal:
         self.velocity_y = 0
         self.bounce_strength = 0.5
         self.collision_cooldown = 0  # Cooldown timer to avoid multiple collisions
+        money_worth = 0
 
         self.previous_positions = []
         self.stuck_threshold = 5  # Number of frames to check if the ball is stuck
@@ -249,11 +250,108 @@ class Button:
 
 # Create a button to spawn Plinko balls
 Button(150, 500, 200, 50, "Click Me!", spawn_plinko_ball, False)
+# Slider class definition
+# Slider class definition
+class Slider:
+    def __init__(self, x, y, width, min_val, max_val, start_val):
+        self.rect = pygame.Rect(x, y, width, 10)
+        self.min_val = min_val
+        self.max_val = max_val
+        self.val = start_val
+        self.width = width
+        self.handle_rect = pygame.Rect(0, 0, 20, 20)
+        self.handle_rect.center = (self.rect.x + (self.val - self.min_val) / (self.max_val - self.min_val) * self.width, self.rect.centery)
+        self.dragging = False
+
+    def get_value(self):
+        return self.val
+
+    def set_value(self, new_value):
+        self.val = max(self.min_val, min(self.max_val, new_value))  # Clamp between min and max
+        self.handle_rect.centerx = self.rect.x + (self.val - self.min_val) / (self.max_val - self.min_val) * self.width
+
+    def draw(self, screen):
+        # Draw slider line
+        pygame.draw.rect(screen, (255, 255, 255), self.rect)
+        # Draw handle
+        pygame.draw.ellipse(screen, (0, 255, 0), self.handle_rect)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.handle_rect.collidepoint(event.pos):
+                self.dragging = True
+
+        elif event.type == pygame.MOUSEBUTTONUP:
+            self.dragging = False
+
+        elif event.type == pygame.MOUSEMOTION:
+            if self.dragging:
+                # Update handle position based on mouse position
+                mouse_x = event.pos[0]
+                # Constrain handle within the slider bounds
+                if self.rect.x <= mouse_x <= self.rect.x + self.width:
+                    self.handle_rect.centerx = mouse_x
+                    # Update the slider value
+                    self.val = self.min_val + (self.handle_rect.centerx - self.rect.x) / self.width * (self.max_val - self.min_val)
+
+# InputBox class to allow manual typing
+class InputBox:
+    def __init__(self, x, y, w, h, font):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.color = (255, 255, 255)
+        self.text = ''
+        self.font = font
+        self.active = False
+        self.text_surface = font.render(self.text, True, self.color)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # Toggle the input box's active state
+            if self.rect.collidepoint(event.pos):
+                self.active = True
+            else:
+                self.active = False
+
+        if event.type == pygame.KEYDOWN:
+            if self.active:
+                if event.key == pygame.K_RETURN:
+                    # Return the value typed by the user
+                    try:
+                        return int(self.text)
+                    except ValueError:
+                        return None
+                elif event.key == pygame.K_BACKSPACE:
+                    self.text = self.text[:-1]
+                else:
+                    self.text += event.unicode
+
+        # Re-render the text
+        self.text_surface = self.font.render(self.text, True, self.color)
+
+    def draw(self, screen):
+        # Blit the text on the input box
+        screen.blit(self.text_surface, (self.rect.x + 5, self.rect.y + 5))
+        pygame.draw.rect(screen, self.color, self.rect, 2)
+
+# Create the slider
+slider = Slider(350, 200, 100, 0, 100, 50)  # (x, y, width, min_val, max_val, initial_val)
+# Create the input box
+input_box = InputBox(350, 230, 100, 36, font)
 
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        # Handle events for the slider
+        slider.handle_event(event)
+        # Handle input for the input box
+        typed_value = input_box.handle_event(event)
+         # If the user presses Enter and inputs a valid number, update the slider
+        if typed_value is not None:
+            slider.set_value(typed_value)
+        # Draw the input box
+        input_box.draw(screen)
+
 
     screen.fill("black")
     screen.blit(draw_surface, (0, 0))
@@ -262,9 +360,26 @@ while running:
     for ball in balls:
         ball.update()
         ball.draw(screen)
+ 
+  # Draw the slider
+    slider.draw(screen)
 
+    # Get the current value of the slider
+    slider_value = slider.get_value()
+
+    # Render the slider value
+    value_surface = font.render(f"{int(slider_value)}", True, (255, 255, 255))
+
+    # Position the value below the slider
+    value_position = (slider.rect.x + slider.width // 2 - value_surface.get_width() // 2, slider.rect.y + 30)
+
+    # Draw the value on the screen
+    screen.blit(value_surface, value_position)
+    
     # Draw the slots at the bottom
     draw_slots()
+    # Draw the input box
+    input_box.draw(screen)
 
     # Display the ball count and slot counts
     display_counts()
