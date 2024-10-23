@@ -21,9 +21,10 @@ ballcount= 0
 #to do 
 # meer commentaar invoegen, alle code logisch ordenen, score systeem bouwen, de data opslaan in een .json file, daarna verslag invoeren
 slot_count=17
-slot_width= screen.get_width() // slot_count
+totalwidth= 450
+slot_width= totalwidth // slot_count
 slot_heights = [0] * slot_count
-
+print(slot_width)
 
 # Function to calculate slope and intercept of a line
 def calculate_line_equation(point1, point2):
@@ -66,6 +67,7 @@ class plinko_bal:
 
         self.previous_positions = []
         self.stuck_threshold = 5  # Number of frames to check if the ball is stuck
+        self.in_slot = False  
 
     def update(self):
         # Track the ball's position to detect if it's stuck
@@ -132,14 +134,15 @@ class plinko_bal:
         global slot_heights
         global ballcount
         if self.y + self.radius >= screen.get_height() -100:
-            balls.pop(0)
-            ballcount -= 1
             for i in range(slot_count):
                 if i * slot_width < self.x < (i + 1) * slot_width:
                     
                     self.in_slot = True
                     slot_heights[i] +=  1
                     break
+
+            balls.remove(self)
+            ballcount -= 1
 
     def is_stuck(self):
         # Check if the ball has been in approximately the same position for several frames
@@ -201,10 +204,11 @@ def display_counts():
     for i in range(slot_count):
         slot_count_surface = font.render(f"{slot_heights[i]}", True, (255, 255, 255))  # Slot count in white
         slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
-        screen.blit(slot_count_surface, (slot_x - 10, screen.get_height() - 30))  # Adjust the y position
+        screen.blit(slot_count_surface, (slot_x - 10+25, screen.get_height() - 30))  # Adjust the y position
+
 def draw_slots():
     for i in range(slot_count):
-        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(i * slot_width, screen.get_height() - 50, slot_width, 50), 2)
+        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect((i * slot_width) +21, screen.get_height() - 100, slot_width, 100), 2)
 
 # Button class to spawn Plinko balls
 
@@ -250,93 +254,6 @@ class Button:
 
 # Create a button to spawn Plinko balls
 Button(150, 500, 200, 50, "Click Me!", spawn_plinko_ball, False)
-# Slider class definition
-# Slider class definition
-class Slider:
-    def __init__(self, x, y, width, min_val, max_val, start_val):
-        self.rect = pygame.Rect(x, y, width, 10)
-        self.min_val = min_val
-        self.max_val = max_val
-        self.val = start_val
-        self.width = width
-        self.handle_rect = pygame.Rect(0, 0, 20, 20)
-        self.handle_rect.center = (self.rect.x + (self.val - self.min_val) / (self.max_val - self.min_val) * self.width, self.rect.centery)
-        self.dragging = False
-
-    def get_value(self):
-        return self.val
-
-    def set_value(self, new_value):
-        self.val = max(self.min_val, min(self.max_val, new_value))  # Clamp between min and max
-        self.handle_rect.centerx = self.rect.x + (self.val - self.min_val) / (self.max_val - self.min_val) * self.width
-
-    def draw(self, screen):
-        # Draw slider line
-        pygame.draw.rect(screen, (255, 255, 255), self.rect)
-        # Draw handle
-        pygame.draw.ellipse(screen, (0, 255, 0), self.handle_rect)
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.handle_rect.collidepoint(event.pos):
-                self.dragging = True
-
-        elif event.type == pygame.MOUSEBUTTONUP:
-            self.dragging = False
-
-        elif event.type == pygame.MOUSEMOTION:
-            if self.dragging:
-                # Update handle position based on mouse position
-                mouse_x = event.pos[0]
-                # Constrain handle within the slider bounds
-                if self.rect.x <= mouse_x <= self.rect.x + self.width:
-                    self.handle_rect.centerx = mouse_x
-                    # Update the slider value
-                    self.val = self.min_val + (self.handle_rect.centerx - self.rect.x) / self.width * (self.max_val - self.min_val)
-
-# InputBox class to allow manual typing
-class InputBox:
-    def __init__(self, x, y, w, h, font):
-        self.rect = pygame.Rect(x, y, w, h)
-        self.color = (255, 255, 255)
-        self.text = ''
-        self.font = font
-        self.active = False
-        self.text_surface = font.render(self.text, True, self.color)
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            # Toggle the input box's active state
-            if self.rect.collidepoint(event.pos):
-                self.active = True
-            else:
-                self.active = False
-
-        if event.type == pygame.KEYDOWN:
-            if self.active:
-                if event.key == pygame.K_RETURN:
-                    # Return the value typed by the user
-                    try:
-                        return int(self.text)
-                    except ValueError:
-                        return None
-                elif event.key == pygame.K_BACKSPACE:
-                    self.text = self.text[:-1]
-                else:
-                    self.text += event.unicode
-
-        # Re-render the text
-        self.text_surface = self.font.render(self.text, True, self.color)
-
-    def draw(self, screen):
-        # Blit the text on the input box
-        screen.blit(self.text_surface, (self.rect.x + 5, self.rect.y + 5))
-        pygame.draw.rect(screen, self.color, self.rect, 2)
-
-# Create the slider
-slider = Slider(350, 200, 100, 0, 100, 50)  # (x, y, width, min_val, max_val, initial_val)
-# Create the input box
-input_box = InputBox(350, 230, 100, 36, font)
 
 while running:
     for event in pygame.event.get():
