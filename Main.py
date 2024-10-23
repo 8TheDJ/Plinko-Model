@@ -133,7 +133,7 @@ class plinko_bal:
         self.velocity_x += 0.1 if randint(0, 1) == 0 else -0.1
 
     def draw(self, surface):
-        pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.radius)
+        pygame.draw.circle(surface, self.color, (self.x,self.y), self.radius)
 
 # Function to draw the rows of circles and update their positions for collision
 def draw_rows_of_circles(surface):
@@ -207,10 +207,7 @@ class Button:
             self.buttonRect.height / 2 - self.buttonSurf.get_rect().height / 2
         ])
         screen.blit(self.buttonSurface, self.buttonRect)
-        
-def spawn_plinko_ball():
-    new_ball = plinko_bal(randint(225, 265), 50)
-    balls.append(new_ball)
+    
 
 # Create a button to spawn Plinko balls
 Button(150, 500, 200, 50, "Click Me!", spawn_plinko_ball, False)
