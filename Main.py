@@ -16,8 +16,14 @@ objects = []
 balls = []
 coordlist = []
 gravity = 0.1
+spawnedplinko=0
+ballcount= 0
 #to do 
 # meer commentaar invoegen, alle code logisch ordenen, score systeem bouwen, de data opslaan in een .json file, daarna verslag invoeren
+slot_count=17
+slot_width= screen.get_width() // slot_count
+slot_heights = [0] * slot_count
+
 
 # Function to calculate slope and intercept of a line
 def calculate_line_equation(point1, point2):
@@ -119,7 +125,20 @@ class plinko_bal:
             # Reflect velocity when hitting the vertical lines
             self.velocity_x = -self.velocity_x  # Reverse horizontal velocity
             self.x += self.velocity_x * 0.1
+        self.check_slot()
 
+    def check_slot(self):
+        global slot_heights
+        global ballcount
+        if self.y + self.radius >= screen.get_height() -100:
+            balls.pop(0)
+            ballcount -= 1
+            for i in range(slot_count):
+                if i * slot_width < self.x < (i + 1) * slot_width:
+                    
+                    self.in_slot = True
+                    slot_heights[i] +=  1
+                    break
 
     def is_stuck(self):
         # Check if the ball has been in approximately the same position for several frames
@@ -168,8 +187,27 @@ top_row_y = coordlist[2][1]  # The y-coordinate of the top row (third ball)
 
 # Function to spawn a new Plinko ball
 def spawn_plinko_ball():
+    global ballcount
     new_ball = plinko_bal(randint(220, 255), 50)
     balls.append(new_ball)
+    ballcount += 1
+def display_counts():
+    # Display total ball count
+    count_surface = font.render(f"Balls: {ballcount}", True, (255, 255, 255))  # White text
+    screen.blit(count_surface, (10, 10))  # Position the text at the top-left of the screen
+
+    # Display slot counts
+    for i in range(slot_count):
+        slot_count_surface = font.render(f"{slot_heights[i]}", True, (255, 255, 255))  # Slot count in white
+        slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
+        screen.blit(slot_count_surface, (slot_x - 10, screen.get_height() - 30))  # Adjust the y position
+def draw_slots():
+    for i in range(slot_count):
+        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(i * slot_width, screen.get_height() - 50, slot_width, 50), 2)
+
+# Button class to spawn Plinko balls
+
+# Function to draw the slots at the bottom
 class Button:
     def __init__(self, x, y, width, height, buttonText="Click Me!", onclickFunction=None, onePress=False):
         self.x = 300
@@ -224,6 +262,12 @@ while running:
     for ball in balls:
         ball.update()
         ball.draw(screen)
+
+    # Draw the slots at the bottom
+    draw_slots()
+
+    # Display the ball count and slot counts
+    display_counts()
 
     # Process the buttons
     for object in objects:
