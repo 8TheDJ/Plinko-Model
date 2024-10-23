@@ -110,11 +110,13 @@ class plinko_bal:
             self.y += self.velocity_y * 0.1
 
         # Check for collision with the invisible vertical boundaries (only above the top row)
-        if self.y < top_row_y and (self.x <= left_vertical_x or self.x >= right_vertical_x):
+        if self.y < top_row_y and (self.x <= left_vertical_x or self.x >= right_vertical_x):    
             # Reflect velocity when hitting the vertical lines
             self.velocity_x = -self.velocity_x  # Reverse horizontal velocity
-
-            # Apply a small offset to prevent continuous collisions with the line
+            self.x += self.velocity_x * 0.1
+        if (self.x <=leftside_vertical_x or self.x >= rightside_vertical_x):
+            # Reflect velocity when hitting the vertical lines
+            self.velocity_x = -self.velocity_x  # Reverse horizontal velocity
             self.x += self.velocity_x * 0.1
 
 
@@ -156,10 +158,13 @@ right_slope, right_intercept = calculate_line_equation(coordlist[2], coordlist[6
 # Vertical boundaries based on the first and third balls
 left_vertical_x = coordlist[0][0]  # x-coordinate of the first ball
 right_vertical_x = coordlist[2][0]  # x-coordinate of the third ball
+leftside_vertical_x = 0
+rightside_vertical_x = 500
 
 # Top of the screen
 top_y = 0  # y-coordinate of the top of the screen
 top_row_y = coordlist[2][1]  # The y-coordinate of the top row (third ball)
+
 # Function to spawn a new Plinko ball
 class Button:
     def __init__(self, x, y, width, height, buttonText="Click Me!", onclickFunction=None, onePress=False):
@@ -200,7 +205,7 @@ class Button:
         screen.blit(self.buttonSurface, self.buttonRect)
         
 def spawn_plinko_ball():
-    new_ball = plinko_bal(randint(225, 265), 50)
+    new_ball = plinko_bal(randint(225, 264), 50)
     balls.append(new_ball)
 
 # Create a button to spawn Plinko balls
