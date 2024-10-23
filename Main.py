@@ -21,9 +21,10 @@ ballcount= 0
 #to do 
 # meer commentaar invoegen, alle code logisch ordenen, score systeem bouwen, de data opslaan in een .json file, daarna verslag invoeren
 slot_count=17
-slot_width= screen.get_width() // slot_count
+totalwidth= 450
+slot_width= totalwidth // slot_count
 slot_heights = [0] * slot_count
-
+print(slot_width)
 
 # Function to calculate slope and intercept of a line
 def calculate_line_equation(point1, point2):
@@ -65,6 +66,7 @@ class plinko_bal:
 
         self.previous_positions = []
         self.stuck_threshold = 5  # Number of frames to check if the ball is stuck
+        self.in_slot = False  
 
     def update(self):
         # Track the ball's position to detect if it's stuck
@@ -131,14 +133,15 @@ class plinko_bal:
         global slot_heights
         global ballcount
         if self.y + self.radius >= screen.get_height() -100:
-            balls.pop(0)
-            ballcount -= 1
             for i in range(slot_count):
                 if i * slot_width < self.x < (i + 1) * slot_width:
                     
                     self.in_slot = True
                     slot_heights[i] +=  1
                     break
+
+            balls.remove(self)
+            ballcount -= 1
 
     def is_stuck(self):
         # Check if the ball has been in approximately the same position for several frames
@@ -200,10 +203,11 @@ def display_counts():
     for i in range(slot_count):
         slot_count_surface = font.render(f"{slot_heights[i]}", True, (255, 255, 255))  # Slot count in white
         slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
-        screen.blit(slot_count_surface, (slot_x - 10, screen.get_height() - 30))  # Adjust the y position
+        screen.blit(slot_count_surface, (slot_x - 10+25, screen.get_height() - 30))  # Adjust the y position
+
 def draw_slots():
     for i in range(slot_count):
-        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(i * slot_width, screen.get_height() - 50, slot_width, 50), 2)
+        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect((i * slot_width) +21, screen.get_height() - 100, slot_width, 100), 2)
 
 # Button class to spawn Plinko balls
 
@@ -249,7 +253,7 @@ class Button:
 
 # Create a button to spawn Plinko balls
 Button(150, 500, 200, 50, "Click Me!", spawn_plinko_ball, False)
-
+#print(coordlist)
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
