@@ -63,7 +63,7 @@ class plinko_bal:
         self.velocity_y = 0
         self.bounce_strength = 0.5
         self.collision_cooldown = 0  # Cooldown timer to avoid multiple collisions
-        self.value = value  # Store the value from the slider
+        self.value = round(value)  # Store the value from the slider
         self.font = font
 
         self.previous_positions = []
@@ -279,7 +279,7 @@ class Slider:
         return self.val
 
     def set_value(self, new_value):
-        self.val = max(self.min_val, min(self.max_val, new_value))  # Clamp between min and max
+        self.val = round(max(self.min_val, min(self.max_val, new_value)))  # Clamp between min and max
         self.handle_rect.centerx = self.rect.x + (self.val - self.min_val) / (self.max_val - self.min_val) * self.width
 
     def draw(self, screen):
