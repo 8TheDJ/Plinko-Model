@@ -167,6 +167,9 @@ top_y = 0  # y-coordinate of the top of the screen
 top_row_y = coordlist[2][1]  # The y-coordinate of the top row (third ball)
 
 # Function to spawn a new Plinko ball
+def spawn_plinko_ball():
+    new_ball = plinko_bal(randint(220, 255), 50)
+    balls.append(new_ball)
 class Button:
     def __init__(self, x, y, width, height, buttonText="Click Me!", onclickFunction=None, onePress=False):
         self.x = 300
