@@ -23,7 +23,7 @@ total_money = 1000
 # meer commentaar invoegen, alle code logisch ordenen, score systeem bouwen, de data opslaan in een .json file, daarna verslag invoeren
 slot_count=17
 totalwidth= 450
-slot_width= 25.65#totalwidth // slot_count
+slot_width= 25.65 #totalwidth // slot_count
 slot_heights = [0] * slot_count
 print(slot_width)
 
