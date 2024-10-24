@@ -1,14 +1,15 @@
-#region Libraries Constants and variables
-from math import sqrt
+from math import *
 from random import randint
 import pygame
 import sys
 import os
 import json
-
-circle_radius = 3  # Radius van elke witte pin
-pygame.init() # Begin van de pygame
-screen = pygame.display.set_mode((500, 650))
+# Pygame setup
+circle_radius = 3  # Radius of each circle
+pygame.init()
+screen_width = 727  # New width
+screen_height = 650  # Same height
+screen = pygame.display.set_mode((screen_width, screen_height))
 clock = pygame.time.Clock()
 fps = 60
 fpsClock = pygame.time.Clock()
@@ -34,6 +35,7 @@ slot_data_file = "plinko_slot_data.json"
 # Dictionary to store slot hits
 slot_hits = {i: 0 for i in range(slot_count)}
 #region functions
+    
 def draw_slots():
     for i in range(slot_count):
         pygame.draw.rect(screen, (255, 255, 255), pygame.Rect((i * slot_width) +21, screen.get_height() - 100, slot_width, 100), 2)
@@ -59,6 +61,7 @@ def calculate_line_equation(point1, point2):
 def is_on_line(x, y, slope, intercept):
     line_y = slope * x + intercept
     return abs(y - line_y) < 5  # Adjust the threshold for better detection
+
 
 # Function to reflect the velocity of the ball when it hits a line
 def reflect_velocity(ball, slope):
@@ -94,9 +97,10 @@ def draw_rows_of_circles(surface):
 draw_surface = pygame.Surface(screen.get_size())
 draw_rows_of_circles(draw_surface)
 
-# Calculate the line equations for the sides of the triangle
+# Calculate the line equations for the sides of the triangle with the ratio
 left_slope, left_intercept = calculate_line_equation(coordlist[0], coordlist[3])
 right_slope, right_intercept = calculate_line_equation(coordlist[2], coordlist[6])
+
 
 left_vertical_x = coordlist[0][0]  # x-coordinate of the first ball
 right_vertical_x = coordlist[2][0]  # x-coordinate of the third ball
@@ -145,7 +149,7 @@ class plinko_bal:
         # Starting conditions of the ball
         self.x = x
         self.y = y
-        self.radius = 6
+        self.radius = 4
         self.color = (255, 0, 0)
         self.velocity_x = 0
         self.velocity_y = 0
@@ -198,11 +202,13 @@ class plinko_bal:
                 self.y += normal_y * 0.1
 
         # Check for collision with the invisible borders
-        if (is_on_line(self.x, self.y, left_slope, left_intercept) or is_on_line(self.x, self.y, right_slope, right_intercept)) and (self.x > 256 or self.x < 219):
-            if is_on_line(self.x, self.y, left_slope, left_intercept):
+        if (is_on_line(self.x, self.y, left_slope, left_intercept) or is_on_line(self.x, self.y, right_slope, right_intercept)) and (self.x > 256+(227/2) or self.x < 219+(227/2)):
+            if (is_on_line(self.x, self.y, left_slope, left_intercept) and self.x < coordlist[0][0]):
                 reflect_velocity(self, left_slope)
-            elif is_on_line(self.x, self.y, right_slope, right_intercept):
+            elif (is_on_line(self.x, self.y, right_slope, right_intercept) and self.x > coordlist[2][0]):
                 reflect_velocity(self, right_slope)
+
+
  
             # Apply a small offset to prevent continuous collisions with the line
             self.x += self.velocity_x * 0.1
@@ -223,11 +229,11 @@ class plinko_bal:
         global slot_heights, ballcount, total_money, slotmultiplylist, slot_hits
         if self.y + self.radius >= screen.get_height() -100:
             for i in range(slot_count) :
-                if (i+1) * slot_width < self.x < ((i+2) * slot_width):
+                if (i+5) * slot_width < self.x < ((i+6) * slot_width):
                     
                     self.in_slot = True
                     slot_heights[i] +=  1
-                    slot_hits[i] += 1
+                    slot_hits[i] = slot_heights[i]
                     total_money = total_money + self.value*slotmultiplylist[i]
                     save_slot_data()
 
@@ -251,10 +257,97 @@ class plinko_bal:
         # Render the value as text and draw it on top of the ball
         value_text = self.font.render(str(self.value), True, (255, 255, 255))  # White color for text
         surface.blit(value_text, (self.x - self.radius, self.y - self.radius))  # Center the text on the ball
+# Function to draw the rows of circles and update their positions for collision
+def draw_rows_of_circles(surface):
+    rows_amount = 16
+    spacing = 25  # Spacing between circles
+    width = spacing * rows_amount  # Total width of the pyramid
+    desired_ratio = 0.75862069
+    height = width * desired_ratio  # Total height for the desired ratio
 
+    # Calculate the y-spacing (vertical) based on Pythagoras
+    # The diagonal is the distance between adjacent balls, which is equal to 'spacing'
+    # y_spacing^2 + (spacing/2)^2 = spacing^2
+    x_half_spacing = spacing / 2
+    y_spacing = sqrt(spacing**2 - x_half_spacing**2)
+        # Scale the y-spacing to achieve the desired ratio
+    scale_factor = height / (y_spacing * rows_amount)
+    y_spacing *= scale_factor
+
+    y_offset = surface.get_height() - ((rows_amount * spacing) / 4)  # Center the tower vertically
+
+    for row in range(3, rows_amount + 3):
+        x_start = (surface.get_width() - (row * spacing)) / 2
+        for col in range(row):
+            circle_x = x_start + col * spacing
+            circle_y = y_offset - (rows_amount + 3 - row) * y_spacing
+            coordlist.append((circle_x, circle_y))  # Store the circle positions for collision detection
+            pygame.draw.circle(surface, "white", (int(circle_x), int(circle_y)), circle_radius)
+
+# Draw the circles on a surface to rotate later
+draw_surface = pygame.Surface(screen.get_size())
+draw_rows_of_circles(draw_surface)
+
+# Calculate the line equations for the sides of the triangle
+left_slope, left_intercept = calculate_line_equation(coordlist[0], coordlist[3])
+right_slope, right_intercept = calculate_line_equation(coordlist[2], coordlist[6])
+# Vertical boundaries based on the first and third balls
+left_vertical_x = coordlist[0][0]  # x-coordinate of the first ball
+right_vertical_x = coordlist[2][0]  # x-coordinate of the third ball
+leftside_vertical_x = 0
+rightside_vertical_x = 727
+
+# Top of the screen
+top_y = 0  # y-coordinate of the top of the screen
+top_row_y = coordlist[2][1]  # The y-coordinate of the top row (third ball)
+
+# Function to spawn a new Plinko ball
+def spawn_plinko_ball(slider_value):
+    global ballcount
+    global total_money
+    if allowplinko == 1:
+        slider_value = slider.get_value()  # Assuming there's a method to get the slider value
+        new_ball = plinko_bal(randint(220, 255)+(227/2), 50,slider_value)
+        balls.append(new_ball)
+        ballcount += 1
+        total_money -= int(slider.get_value())
+
+def on_button_click():
+    slider_value = slider.get_value()  # Get the slider value here
+    spawn_plinko_ball(slider_value)    # Pass the slider value to spawn_plinko_ball
+
+def display_counts():
+    # Display total ball count
+    count_surface = font.render(f"Balls: {ballcount}", True, (255, 255, 255))  # White text
+    screen.blit(count_surface, (10, 10))  # Position the text at the top-left of the screen
+
+    # Display slot counts
+    for i in range(slot_count):
+        slot_count_surface = font.render(f"{slot_heights[i]}", True, (255, 255, 255))  # Slot count in white
+        slot_x = (i * slot_width) +(227/2) + slot_width // 2  # Center the text in each slot
+        screen.blit(slot_count_surface, (slot_x - 10+25, screen.get_height() - 30))  # Adjust the y position
+def display_multiplicants():
+    for i in range(slot_count):
+        multiplier = font2.render(f"{slotmultiplylist[i]}", True, (255, 255, 255))  # Slot multiplier in white
+        slot_x = (i * slot_width) +(227/2) + slot_width // 2  # Center the text in each slot
+        screen.blit(multiplier, (slot_x - 10 + 25, screen.get_height() -80 ))  # Adjust the y position
+def display_money():
+    # Display total money count
+    count_money = font.render(f"money: {total_money}", True, (255, 255, 255))  # White textoney
+    screen.blit(count_money, (120, 10))  # Position the text at the top-middle of the screen
+
+
+
+def draw_slots():
+    for i in range(slot_count):
+        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect((i * slot_width) +21+(227/2), screen.get_height() - 100, slot_width, 100), 2)
+
+# Button class to spawn Plinko balls
+
+# Function to draw the slots at the bottom
 class Button:
     def __init__(self, x, y, width, height, buttonText="Click Me!", onclickFunction=None, onePress=False):
-        self.x = 300
+        self.x = 300+(227/2)
         self.y = 10
         self.width = 200
         self.height = 80
@@ -289,6 +382,11 @@ class Button:
             self.buttonRect.height / 2 - self.buttonSurf.get_rect().height / 2
         ])
         screen.blit(self.buttonSurface, self.buttonRect)
+            
+
+    
+
+# Create a button to spawn Plinko balls
 Button(150, 500, 200, 50, "Click Me!", on_button_click, False)
 
 class Slider:
@@ -333,6 +431,7 @@ class Slider:
                     # Update the slider value
                     self.val = self.min_val + (self.handle_rect.centerx - self.rect.x) / self.width * (self.max_val - self.min_val)
 
+# InputBox class to allow manual typing
 class InputBox:
     def __init__(self, x, y, w, h, font):
         self.rect = pygame.Rect(x, y, w, h)
@@ -371,9 +470,11 @@ class InputBox:
         screen.blit(self.text_surface, (self.rect.x + 5, self.rect.y + 5))
         pygame.draw.rect(screen, self.color, self.rect, 2)
 
-slider = Slider(350, 200, 100, 0, 100, 50)  #  een instance van een slider
-input_box = InputBox(350, 230, 100, 36, font) #instance van inputbox
-#region Simulation While loop
+# Create the slider
+slider = Slider(350+(227/2), 200, 100, 0, 100, 50)  # (x, y, width, min_val, max_val, initial_val)
+# Create the input box
+input_box = InputBox(350+(227/2), 230, 100, 36, font)
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -429,7 +530,7 @@ while running:
         allowplinko= 0
     if total_money > 0 and slider.get_value() < total_money:
         allowplinko =1
-       
+
     pygame.display.flip()
     fpsClock.tick(fps)
 
