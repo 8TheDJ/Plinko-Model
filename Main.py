@@ -420,9 +420,8 @@ while running:
     display_money()
 
     # Process the buttons
-    if total_money >0 and slider_value > total_money :
-        for object in objects:
-            object.process()
+    for object in objects:
+        object.process()
     
 
     pygame.display.flip()
