@@ -140,8 +140,8 @@ class plinko_bal:
         global total_money
         global slotmultiplylist
         if self.y + self.radius >= screen.get_height() -100:
-            for i in range(slot_count):
-                if i * slot_width < self.x < (i + 1) * slot_width:
+            for i in range(slot_count) :
+                if (i+1) * slot_width < self.x < ((i+2) * slot_width):
                     
                     self.in_slot = True
                     slot_heights[i] +=  1
@@ -278,10 +278,13 @@ class Button:
             self.buttonRect.height / 2 - self.buttonSurf.get_rect().height / 2
         ])
         screen.blit(self.buttonSurface, self.buttonRect)
+            
+
     
 
 # Create a button to spawn Plinko balls
 Button(150, 500, 200, 50, "Click Me!", on_button_click, False)
+
 class Slider:
     def __init__(self, x, y, width, min_val, max_val, start_val):
         self.rect = pygame.Rect(x, y, width, 10)
@@ -417,8 +420,10 @@ while running:
     display_money()
 
     # Process the buttons
-    for object in objects:
-        object.process()
+    if total_money >0 and slider_value > total_money :
+        for object in objects:
+            object.process()
+    
 
     pygame.display.flip()
     fpsClock.tick(fps)
