@@ -21,6 +21,7 @@ spawnedplinko=0
 ballcount= 0
 total_money = 1000
 slotmultiplylist = [110,41,10,5,3,1.5,1,0.5,0.3,0.5,1,1.5,3,5,10,41,110]
+allowplinko = 1
 #to do 
 # meer commentaar invoegen, alle code logisch ordenen, score systeem bouwen, de data opslaan in een .json file, daarna verslag invoeren
 slot_count=17
@@ -28,6 +29,7 @@ totalwidth= 450
 slot_width= 25.65 #totalwidth // slot_count
 slot_heights = [0] * slot_count
 print(slot_width)
+
 
 # Function to calculate slope and intercept of a line
 def calculate_line_equation(point1, point2):
@@ -202,11 +204,12 @@ top_row_y = coordlist[2][1]  # The y-coordinate of the top row (third ball)
 def spawn_plinko_ball(slider_value):
     global ballcount
     global total_money
-    slider_value = slider.get_value()  # Assuming there's a method to get the slider value
-    new_ball = plinko_bal(randint(220, 255), 50,slider_value)
-    balls.append(new_ball)
-    ballcount += 1
-    total_money -= int(slider.get_value())
+    if allowplinko == 1:
+        slider_value = slider.get_value()  # Assuming there's a method to get the slider value
+        new_ball = plinko_bal(randint(220, 255), 50,slider_value)
+        balls.append(new_ball)
+        ballcount += 1
+        total_money -= int(slider.get_value())
 
 def on_button_click():
     slider_value = slider.get_value()  # Get the slider value here
@@ -422,7 +425,11 @@ while running:
     # Process the buttons
     for object in objects:
         object.process()
-    
+    if total_money <= 0 or slider.get_value()> total_money:
+        allowplinko= 0
+    if total_money > 0 and slider.get_value() < total_money:
+        allowplinko =1
+
 
     pygame.display.flip()
     fpsClock.tick(fps)
