@@ -8,156 +8,137 @@ import json # importeren van de library json
 import time # importeren van de library time
 #region Constanten en variabelen 
 circle_radius = 3  # Radius van elke witte pin
-pygame.init()
-screen_width = 727  # New width
-screen_height = 650  # Same height
-screen = pygame.display.set_mode((screen_width, screen_height))
-clock = pygame.time.Clock()
-fps = 60
-fpsClock = pygame.time.Clock()
-font = pygame.font.SysFont("timesnewroman", 30)
-font2 =pygame.font.SysFont("timesnewroman", 10)
-running = True
-objects = []
-balls = []
-coordlist = []
-gravity = 0.1
-spawnedplinko=0
-ballcount= 0
-total_money = 1000
-slotmultiplylist = [110,41,10,5,3,1.5,1,0.5,0.3,0.5,1,1.5,3,5,10,41,110]
-allowplinko = 1
-slot_count=17
-totalwidth= 450
-slot_width= 25.65 #totalwidth // slot_count
-slot_heights = [0] * slot_count
-slot_data_file = "plinko_slot_data.json"
-# Dictionary to store slot hits
-slot_hits = {i: 0 for i in range(slot_count)}
-#region functions
-    
-def draw_slots():
-    for i in range(slot_count):
-        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect((i * slot_width) +21, screen.get_height() - 100, slot_width, 100), 2)
-def load_slot_data():
-    if os.path.exists(slot_data_file):
-        with open(slot_data_file, 'r') as file:
-            return json.load(file)  # Load the existing game data (list of games)
+pygame.init() # initialisatie van pygame
+screen_width = 727  # scherm breedte
+screen_height = 650  # scherm hoogte
+screen = pygame.display.set_mode((screen_width, screen_height)) # instantie van het scherm waarop de simulatie plaats vindt
+fps = 60 # de framerate per seconden
+fpsClock = pygame.time.Clock() # Een clock die de framerate gebruikt, eigenlijk de delta tijd van de simulatie, maar in pygame heet het anders, FPS staat voor FramePerSecond een vaak gebruikte term in games voor het aantal frames dat je per seconden ziet.
+font = pygame.font.SysFont("timesnewroman", 30) # een font om te gebruiken, het komt veel voor in de code, dus hebben het hier gedefined.
+font2 =pygame.font.SysFont("timesnewroman", 10) # een font om te gebruiken, het komt veel voor in de code, dus hebben het hier gedefined.
+running = True #Inplaats van een while true loop hebben we een while running loop van gemaakt en running gelijk aan True gezet, dit maakte alles iets meer logisch en overzichtelijk.
+objects = [] # Een lijst voor objecten, in dit geval gebruikt voor buttons, waarvan we er maar 1 gebruiken
+balls = [] # een lijst van alle plinko ballen in het spel, er wordt een nieuwe instantie gemaakt met spawn_plinko_ball(), en later ook in de check_slot functie in de class plinko_ball geremoved als hij een slot raakt.
+coordlist = [] # een zeer belangrijke list, de coordinaten van de witte pins worden hier opgeslagen, wij hebben met behulp van bepaalde punten uit deze lijst die wij uitgezocht hebben wiskundige formules voor de borders opgesteld
+gravity = 0.1 # de zwaarte kracht voor de natuurkundige krachten die wij hebben toegevoegd, dit is een constante omdat de zwaarte kracht niet gaat veranderen.
+ballcount= 0 # houd het huidige aantal ballen in het spel bij, word geupdate als een bal het slot raakt bij de functie check_slot en er wordt een bal toegevoegd wanneer spawn_plinkobal() gecalled wordt door op de button te clicken 
+total_money = 1000 # het begin aantal geld dat de speler krijgt aan het begin van het spel
+slotmultiplylist = [110,41,10,5,3,1.5,1,0.5,0.3,0.5,1,1.5,3,5,10,41,110] # de multipliers voor de slots, zodat de speler iets kan winnen
+allowplinko = 1 # Gebruikt als controle, zodat je geen plinko ballen in kan spawnen als je geen geldt hebt, dat wordt deze variabele naar 0 gezet en gaat pas weer naar 1 als er genoeg geld is om nog een plinko bal te spawnen.
+slot_count=17 # Het aantal slots dat we gebruiken, dat gebaseerd is op het aantal gaten tussen de laatste rij pins, zodat de pingaten en de slots matchen
+totalwidth= 450 # de totale breedte van alle slots
+slot_width= 25.65 # De slot breedte, vroeger calculeerde we dit, maar we kwamen nooit goed uit, dus we hebben dit benaderd en kwamen hier op uit. Dit is wat we gebruikten voor de bepaliong: totalwidth // slot_count
+slot_heights = [0] * slot_count # De definitie voor de lijst waar alle slots in staan van 0 tot 16, dus in totaal 17
+slot_data_file = "plinko_slot_data.json" # De naam van de Json file waar we alle data opslaan
+slot_hits = {i: 0 for i in range(slot_count)} # Een dictionairy om alle hits op alle slots vast te leggen
+#region functions 
+def draw_slots(): # deze functie tekent de slots op het scherm
+    for i in range(slot_count): # het lopen door alle slots, zodat alle 17 slots getekent worden op het scherm
+        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect((i * slot_width) +21, screen.get_height() - 100, slot_width, 100), 2) #het tekenen van de slots
+def load_slot_data(): # deze functie helpt bij het laden van data uit de json file
+    if os.path.exists(slot_data_file): # het vinden van het relatieve pad naar de json file.
+        with open(slot_data_file, 'r') as file: # het openen van de file met 'r' = read mode
+            return json.load(file)  # het laden van de uitkomsten van eerder gespeelde spelletjes
     else:
-        return []  # Return an empty list if no file exists yet
-# Function to save slot hits to the JSON file
-def save_slot_data(slot_hits):
-    # Laad bestaande game data
-    game_data = load_slot_data()
+        return []  # Een lege lijst teruggeven als de file nog niet bestaat.
+def save_slot_data(slot_hits): # functie om de de slot hits op te slaan in de Json file voor verder onderzoek.
+    game_data = load_slot_data() # Laad bestaande game data
 
     # Voeg een nieuw spelresultaat toe met de huidige slot_hits en een timestamp
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    game_data.append({
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S") #generen van een timestamp doormiddel van de time library
+    game_data.append({ # het toevoegen van de data aan een lijst in de vorm van een Dictionairy, in de JSON file zijn dus meerdere dictionairies met de bijbehorden timestamp en game_data opgeslagen in een lijst
         'timestamp': timestamp,
         'slot_hits': slot_hits  # Hier worden de huidige slot_hits opgeslagen
     })
 
     # Sla het bijgewerkte game_data op in de JSON
-    with open(slot_data_file, 'w') as file:
-        json.dump(game_data, file, indent=4)
-
-# Function to calculate slope and intercept of a line
-def calculate_line_equation(point1, point2):
-    slope = (point2[1] - point1[1]) / (point2[0] - point1[0])
-    intercept = point1[1] - slope * point1[0] 
-    return slope, intercept
-
-# Function to check if the ball is on or near the line
-def is_on_line(x, y, slope, intercept):
-    line_y = slope * x + intercept
-    return abs(y - line_y) < 5  # Adjust the threshold for better detection
-
-# Function to reflect the velocity of the ball when it hits a line
-def reflect_velocity(ball, slope):
-    # Calculate the normal vector of the line
-    normal_x = -slope  # The slope of the normal line is -1/slope of the line
-    normal_y = 1
+    with open(slot_data_file, 'w') as file: #hier opent het programma de file in 'W' = Write modus, 
+        json.dump(game_data, file, indent=4) # hier dumpt de JSON library alle data in het jsondocument met een indentation van 4
+def calculate_line_equation(point1, point2): # een functie om de richtingscoëfficiënt van een lijn en het startgetal van een lijn(Later verwerken we deze lijnen in y=ax+b voor de borders)
+    slope = (point2[1] - point1[1]) / (point2[0] - point1[0]) # berekenen van de richtingscoëfficiënt, naamgeving in het engels was makkelijker tijdens het maken van deze functie.
+    intercept = point1[1] - slope * point1[0] # berekenen van het startgetal
+    return slope, intercept # return van het startgetal en de richtingscoëfficiënt
+def is_on_line(x, y, slope, intercept):# fucntie om te kijken of een plinko ball dicht bij een lijn(border) is
+    line_y = slope * x + intercept #definitie van een lijn op het scherm in de vorm van y=ax+b
+    return abs(y - line_y) < 5  # Het teruggeven van een voorwaarde die checkt of de plinko ball binnen 5 pixels/units van de lijn af zit
+def reflect_velocity(ball, slope): # Functie om de ball te laten bouncen, door de snelheid om te draaien als het een lijn raakt
+    # Berkenen van de normaal vector van een lijn
+    normal_x = -slope  # De richtingscoëfficiënt van de normaalvector is -1/richtingscoëfficiënt van de lijn
+    normal_y = 1 # de y waarde van de normaal vector hoeft niet verandert te worden en blijft dus 1
     
     # Normalize the normal vector
-    length = sqrt(normal_x ** 2 + normal_y ** 2)
-    normal_x /= length
-    normal_y /= length
+    length = sqrt(normal_x ** 2 + normal_y ** 2) # Berkenen van de lengte van de normaal vector
+    normal_x /= length # de x waarde van de normaal vector is de richtingscoéfficiënt gedeeld door de lengte
+    normal_y /= length # de y waarde van de normaal vector is 1 gedeeld door de lengte
 
-    # Reflect the velocity over the normal
-    dot_product = ball.velocity_x * normal_x + ball.velocity_y * normal_y
-    ball.velocity_x -= 1.5 * dot_product * normal_x
-    ball.velocity_y -= 1.5 * dot_product * normal_y
+    # Omdraaien van de snelheid voor het nabootsen van een stuiter 
+    dot_product = ball.velocity_x * normal_x + ball.velocity_y * normal_y # tussen product zodat de code makkelijker te lezen is
+    ball.velocity_x -= 1.5 * dot_product * normal_x # het omdraaien van de snelheid in de x richting
+    ball.velocity_y -= 1.5 * dot_product * normal_y# het omdraaien van de snelheid in de y richting
+def draw_rows_of_circles(surface): # Functie om de witte pins op het scherm te tekenen
+    rows_amount = 16 # aantal rijen cirkels dat wij uiteindelijk wilde hebben
+    spacing = 25  # de ruimte tussen de cirkels
+    width = spacing * rows_amount  # totale breedte van de driehoek
+    desired_ratio = 0.75862069 # Tussen stap van een constante opslaan voor overzichtelijkheid
+    height = width * desired_ratio  # Totale hooghte berkend door de ratio die wij wilden keer de breedte van de pyramide
 
-def draw_rows_of_circles(surface):
-    rows_amount = 16
-    spacing = 25  # Spacing between circles
-    width = spacing * rows_amount  # Total width of the pyramid
-    desired_ratio = 0.75862069
-    height = width * desired_ratio  # Total height for the desired ratio
+    # Het berekenen van de ruimte in de y richting op basis van pythogoras
+    x_half_spacing = spacing / 2 # x half spacing is dus de ruimte gedeeld door 2
+    y_spacing = sqrt(spacing ** 2 - x_half_spacing ** 2) # Ruimte in de y richting berekend door pythogoras
+    scale_factor = height / (y_spacing * rows_amount) # De factor die we zo meteen gebruiken om 
+    y_spacing *= scale_factor # Y ruimte keer de scale factor
 
-    # Calculate the y-spacing (vertical) based on Pythagoras
-    x_half_spacing = spacing / 2
-    y_spacing = sqrt(spacing ** 2 - x_half_spacing ** 2)
-    scale_factor = height / (y_spacing * rows_amount)
-    y_spacing *= scale_factor
+    y_offset = surface.get_height() - ((rows_amount * spacing) / 4)  # de pyramide centreren.
 
-    y_offset = surface.get_height() - ((rows_amount * spacing) / 4)  # Center the tower vertically
-
-    for row in range(3, rows_amount + 3):
-        x_start = (surface.get_width() - (row * spacing)) / 2
-        for col in range(row):
-            circle_x = x_start + col * spacing
-            circle_y = y_offset - (rows_amount + 3 - row) * y_spacing
-            coordlist.append((circle_x, circle_y))  # Store the circle positions for collision detection
-            pygame.draw.circle(surface, "white", (int(circle_x), int(circle_y)), circle_radius)
+    for row in range(3, rows_amount + 3): #iteraties om de loops te doorlopen
+        x_start = (surface.get_width() - (row * spacing)) / 2 # het berkenen van de x start coordinaat
+        for col in range(row): # een for loop om de coordinaten van een circel uit te rekenen op basis van vorige berekingen en die daarna te tekenen op het scherm.
+            circle_x = x_start + col * spacing # berkenen van de circle x coordinaat
+            circle_y = y_offset - (rows_amount + 3 - row) * y_spacing # berkenen van de circle y coordinaat
+            coordlist.append((circle_x, circle_y))  # Het opslaan van de posties van de witte ballen voor het detecteren van botsingen(we gebruiken liever de term collisions)
+            pygame.draw.circle(surface, "white", (int(circle_x), int(circle_y)), circle_radius)  # tekenen van een circle met x en y coordinaten en een circles radius met een witte kleur op het scherm
 
 # Draw the circles on a surface to rotate later
-draw_surface = pygame.Surface(screen.get_size())
-draw_rows_of_circles(draw_surface)
+draw_surface = pygame.Surface(screen.get_size()) #het defineren van een tekenen oppervlak door de screensize te bepalen en op te slaan.
+draw_rows_of_circles(draw_surface) # het tekenen van de witte pins op het teken oppervlak, dat het scherm is.
 
-# Calculate the line equations for the sides of the triangle with the ratio
-left_slope, left_intercept = calculate_line_equation(coordlist[0], coordlist[3])
-right_slope, right_intercept = calculate_line_equation(coordlist[2], coordlist[6])
-left_vertical_x = coordlist[0][0]  # x-coordinate of the first ball
-right_vertical_x = coordlist[2][0]  # x-coordinate of the third ball
-leftside_vertical_x = 0
-rightside_vertical_x = 500
-top_y = 0  # y-coordinate of the top of the screen
-top_row_y = coordlist[2][1]  # The y-coordinate of the top row (third ball)
-def spawn_plinko_ball(slider_value):
-    global ballcount
-    global total_money
-    if allowplinko == 1:
+# Het berekenen van de lineaire vergelijkingen voor de borders langs de driehoek, doormideel van twee coordinaten uit de lijst van pins.
+left_slope, left_intercept = calculate_line_equation(coordlist[0], coordlist[3]) # het berkenen van de linkerlijn zijn richtingcoéfficiënt en startgetal, dat uiteindelijk de linker border zal worden
+right_slope, right_intercept = calculate_line_equation(coordlist[2], coordlist[6])# het berkenen van de rechterlijn zijn richtingcoéfficiënt en startgetal, dat uiteindelijk de rechter border zal worden
+left_vertical_x = coordlist[0][0]  # x-coordinate van de eerste bal
+right_vertical_x = coordlist[2][0]  # x-coordinate van de derde bal
+leftside_vertical_x = 0 # een vergelijking voor een verticale border, de border wordt later in de code geïnitialiseert
+rightside_vertical_x = 500 # een vergelijking voor een verticale border, de border wordt later in de code geïnitialiseert
+top_y = 0  # y-coordinate van de top van het scherm
+top_row_y = coordlist[2][1]  # The y-coordinate van de bovenste row (third ball)
+def spawn_plinko_ball(slider_value): # Functie om een plinko ball te spawnen, deze functie wordt gecalled/gebruikt door de button
+    global ballcount, total_money # het callen van globals, zodat ze door de hele code gebruikt kunnen worden
+    if allowplinko == 1: # Als je genoeg geld hebt voldoe je aan deze voorwarde en mag je een nieuwe plinko ball spawnen
         slider_value = slider.get_value()  # Assuming there's a method to get the slider value
-        new_ball = plinko_bal(randint(220, 255), 50,slider_value)
-        balls.append(new_ball)
-        ballcount += 1
-        total_money -= int(slider.get_value())
+        new_ball = plinko_bal(randint(220, 255), 50,slider_value) # initialisatie van een nieuwe plinko ball op een random locatie tussen de x coordinaten 220 en 225 en met y coordinaat 50, met een value die door de slider bepaald wordt
+        balls.append(new_ball) # nieuwe plinko ball op de lijst van actieve ballen in het spel
+        ballcount += 1 # Ook voor de display wordt er een ball toegevoegd
+        total_money -= int(slider.get_value()) # Het aftrekken van het bedrag dat het kostte om een plinko ball te spawnen van het totaal aantal geld van de speler.
+def on_button_click(): # event handler voor het clicken van een button
+    slider_value = slider.get_value()  # Slider value
+    spawn_plinko_ball(slider_value)    # callen van de spawn plinko ball functie met de paramter slider_value voor de waarde van de bal
+def display_counts(): # functie om de actieve aantal ballen te laten zien op het scherm
+    count_surface = font.render(f"Balls: {ballcount}", True, (255, 255, 255))  # De witte text op het scherm 
+    screen.blit(count_surface, (10, 10))  # positie van de text en de text wordt op het scherm gezet.
 
-def on_button_click():
-    slider_value = slider.get_value()  # Get the slider value here
-    spawn_plinko_ball(slider_value)    # Pass the slider value to spawn_plinko_ball
-
-def display_counts():
-    # Display total ball count
-    count_surface = font.render(f"Balls: {ballcount}", True, (255, 255, 255))  # White text
-    screen.blit(count_surface, (10, 10))  # Position the text at the top-left of the screen
-
-    # Display slot counts
-    for i in range(slot_count):
-        slot_count_surface = font.render(f"{slot_heights[i]}", True, (255, 255, 255))  # Slot count in white
-        slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
-        screen.blit(slot_count_surface, (slot_x - 10+25, screen.get_height() - 30))  # Adjust the y position
-def display_multiplicants():
-    for i in range(slot_count):
-        multiplier = font2.render(f"{slotmultiplylist[i]}", True, (255, 255, 255))  # Slot multiplier in white
-        slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
-        screen.blit(multiplier, (slot_x - 10 + 25, screen.get_height() -80 ))  # Adjust the y position
-def display_money():
-    # Display total money count
-    count_money = font.render(f"money: {total_money}", True, (255, 255, 255))  # White textoney
-    screen.blit(count_money, (120, 10))  # Position the text at the top-middle of the screen
-
+    # display van de slot_count
+    for i in range(slot_count): # for loop om de text van de slots te renderen op de slots zelf
+        slot_count_surface = font.render(f"{slot_heights[i]}", True, (255, 255, 255))  # De witte text
+        slot_x = i * slot_width + slot_width // 2  # het centreren van de text in elk slot
+        screen.blit(slot_count_surface, (slot_x - 10+25, screen.get_height() - 30))  # het bijstellen van de y positie
+def display_multiplicants():# Functie om de waardes van de slots ,waarmee de waarde van een plinko ball wordt vermenigvuldigt als hij die raakt, wordt weergegeven op de slot
+    for i in range(slot_count): #for loop die voor elke slot het volgende doet
+        multiplier = font2.render(f"{slotmultiplylist[i]}", True, (255, 255, 255))  # Text van de multiplier
+        slot_x = i * slot_width + slot_width // 2  # centreren in elk slot
+        screen.blit(multiplier, (slot_x - 10 + 25, screen.get_height() -80 ))  # bijstellen van de y positie
+def display_money():# een functie om het totaal aantal geld te weergeven
+    count_money = font.render(f"money: {total_money}", True, (255, 255, 255))  # De witte text 
+    screen.blit(count_money, (120, 10))  # De text wordt op boven aan het scherm weergegeven
 # Function to draw the rows of circles and update their positions for collision
 def draw_rows_of_circles(surface):
     rows_amount = 16
