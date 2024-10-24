@@ -4,7 +4,7 @@ import pygame
 import sys
 
 # Pygame setup
-circle_radius = 4  # Radius of each circle
+circle_radius = 3  # Radius of each circle
 pygame.init()
 screen = pygame.display.set_mode((500, 650))
 clock = pygame.time.Clock()
