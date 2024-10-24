@@ -1,11 +1,13 @@
+#region Libraries Constants and variables
 from math import sqrt
 from random import randint
 import pygame
 import sys
+import os
+import json
 
-# Pygame setup
-circle_radius = 3  # Radius of each circle
-pygame.init()
+circle_radius = 3  # Radius van elke witte pin
+pygame.init() # Begin van de pygame
 screen = pygame.display.set_mode((500, 650))
 clock = pygame.time.Clock()
 fps = 60
@@ -23,14 +25,30 @@ total_money = 1000
 slotmultiplylist = [110,41,10,5,3,1.5,1,0.5,0.3,0.5,1,1.5,3,5,10,41,110]
 allowplinko = 1
 #to do 
-# meer commentaar invoegen, alle code logisch ordenen, score systeem bouwen, de data opslaan in een .json file, daarna verslag invoeren
+# meer commentaar invoegen, alle code logisch ordenen, de data opslaan in een .json file, daarna verslag invoeren
 slot_count=17
 totalwidth= 450
 slot_width= 25.65 #totalwidth // slot_count
 slot_heights = [0] * slot_count
-print(slot_width)
-
-
+slot_data_file = "plinko_slot_data.json"
+# Dictionary to store slot hits
+slot_hits = {i: 0 for i in range(slot_count)}
+#region functions
+def draw_slots():
+    for i in range(slot_count):
+        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect((i * slot_width) +21, screen.get_height() - 100, slot_width, 100), 2)
+def load_slot_data():
+    global slot_hits
+    if os.path.exists(slot_data_file):
+        with open(slot_data_file, 'r') as file:
+            slot_hits = json.load(file)
+    else:
+        save_slot_data()
+# Function to save slot hits to the JSON file
+def save_slot_data():
+    with open(slot_data_file, 'w') as file:
+        json.dump(slot_hits, file)
+load_slot_data()
 # Function to calculate slope and intercept of a line
 def calculate_line_equation(point1, point2):
     slope = (point2[1] - point1[1]) / (point2[0] - point1[0])
@@ -57,6 +75,71 @@ def reflect_velocity(ball, slope):
     dot_product = ball.velocity_x * normal_x + ball.velocity_y * normal_y
     ball.velocity_x -= 2 * dot_product * normal_x
     ball.velocity_y -= 2 * dot_product * normal_y
+
+# Function to draw the rows of circles and update their positions for collision
+def draw_rows_of_circles(surface):
+    rows_amount = 16
+    spacing = 25  # Spacing between circles
+    y_offset = surface.get_height() - ((rows_amount * spacing) / 4)  # Center the tower vertically
+
+    for row in range(3, rows_amount + 3):
+        x_start = (surface.get_width() - (row * spacing)) / 2
+        for col in range(row):
+            circle_x = x_start + col * spacing
+            circle_y = y_offset - (rows_amount + 3 - row) * spacing
+            coordlist.append((circle_x, circle_y))  # Store the circle positions for collision detection
+            pygame.draw.circle(surface, "white", (int(circle_x), int(circle_y)), circle_radius)
+
+# Draw the circles on a surface to rotate later
+draw_surface = pygame.Surface(screen.get_size())
+draw_rows_of_circles(draw_surface)
+
+# Calculate the line equations for the sides of the triangle
+left_slope, left_intercept = calculate_line_equation(coordlist[0], coordlist[3])
+right_slope, right_intercept = calculate_line_equation(coordlist[2], coordlist[6])
+
+left_vertical_x = coordlist[0][0]  # x-coordinate of the first ball
+right_vertical_x = coordlist[2][0]  # x-coordinate of the third ball
+leftside_vertical_x = 0
+rightside_vertical_x = 500
+
+top_y = 0  # y-coordinate of the top of the screen
+top_row_y = coordlist[2][1]  # The y-coordinate of the top row (third ball)
+def spawn_plinko_ball(slider_value):
+    global ballcount
+    global total_money
+    if allowplinko == 1:
+        slider_value = slider.get_value()  # Assuming there's a method to get the slider value
+        new_ball = plinko_bal(randint(220, 255), 50,slider_value)
+        balls.append(new_ball)
+        ballcount += 1
+        total_money -= int(slider.get_value())
+
+def on_button_click():
+    slider_value = slider.get_value()  # Get the slider value here
+    spawn_plinko_ball(slider_value)    # Pass the slider value to spawn_plinko_ball
+
+def display_counts():
+    # Display total ball count
+    count_surface = font.render(f"Balls: {ballcount}", True, (255, 255, 255))  # White text
+    screen.blit(count_surface, (10, 10))  # Position the text at the top-left of the screen
+
+    # Display slot counts
+    for i in range(slot_count):
+        slot_count_surface = font.render(f"{slot_heights[i]}", True, (255, 255, 255))  # Slot count in white
+        slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
+        screen.blit(slot_count_surface, (slot_x - 10+25, screen.get_height() - 30))  # Adjust the y position
+def display_multiplicants():
+    for i in range(slot_count):
+        multiplier = font2.render(f"{slotmultiplylist[i]}", True, (255, 255, 255))  # Slot multiplier in white
+        slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
+        screen.blit(multiplier, (slot_x - 10 + 25, screen.get_height() -80 ))  # Adjust the y position
+def display_money():
+    # Display total money count
+    count_money = font.render(f"money: {total_money}", True, (255, 255, 255))  # White textoney
+    screen.blit(count_money, (120, 10))  # Position the text at the top-middle of the screen
+
+#region classes
 class plinko_bal:
     def __init__(self, x, y, value):
         # Starting conditions of the ball
@@ -137,17 +220,16 @@ class plinko_bal:
         self.check_slot()
 
     def check_slot(self):
-        global slot_heights
-        global ballcount
-        global total_money
-        global slotmultiplylist
+        global slot_heights, ballcount, total_money, slotmultiplylist, slot_hits
         if self.y + self.radius >= screen.get_height() -100:
             for i in range(slot_count) :
                 if (i+1) * slot_width < self.x < ((i+2) * slot_width):
                     
                     self.in_slot = True
                     slot_heights[i] +=  1
+                    slot_hits[i] += 1
                     total_money = total_money + self.value*slotmultiplylist[i]
+                    save_slot_data()
 
             balls.remove(self)
             ballcount -= 1
@@ -169,81 +251,7 @@ class plinko_bal:
         # Render the value as text and draw it on top of the ball
         value_text = self.font.render(str(self.value), True, (255, 255, 255))  # White color for text
         surface.blit(value_text, (self.x - self.radius, self.y - self.radius))  # Center the text on the ball
-# Function to draw the rows of circles and update their positions for collision
-def draw_rows_of_circles(surface):
-    rows_amount = 16
-    spacing = 25  # Spacing between circles
-    y_offset = surface.get_height() - ((rows_amount * spacing) / 4)  # Center the tower vertically
 
-    for row in range(3, rows_amount + 3):
-        x_start = (surface.get_width() - (row * spacing)) / 2
-        for col in range(row):
-            circle_x = x_start + col * spacing
-            circle_y = y_offset - (rows_amount + 3 - row) * spacing
-            coordlist.append((circle_x, circle_y))  # Store the circle positions for collision detection
-            pygame.draw.circle(surface, "white", (int(circle_x), int(circle_y)), circle_radius)
-
-# Draw the circles on a surface to rotate later
-draw_surface = pygame.Surface(screen.get_size())
-draw_rows_of_circles(draw_surface)
-
-# Calculate the line equations for the sides of the triangle
-left_slope, left_intercept = calculate_line_equation(coordlist[0], coordlist[3])
-right_slope, right_intercept = calculate_line_equation(coordlist[2], coordlist[6])
-# Vertical boundaries based on the first and third balls
-left_vertical_x = coordlist[0][0]  # x-coordinate of the first ball
-right_vertical_x = coordlist[2][0]  # x-coordinate of the third ball
-leftside_vertical_x = 0
-rightside_vertical_x = 500
-
-# Top of the screen
-top_y = 0  # y-coordinate of the top of the screen
-top_row_y = coordlist[2][1]  # The y-coordinate of the top row (third ball)
-
-# Function to spawn a new Plinko ball
-def spawn_plinko_ball(slider_value):
-    global ballcount
-    global total_money
-    if allowplinko == 1:
-        slider_value = slider.get_value()  # Assuming there's a method to get the slider value
-        new_ball = plinko_bal(randint(220, 255), 50,slider_value)
-        balls.append(new_ball)
-        ballcount += 1
-        total_money -= int(slider.get_value())
-
-def on_button_click():
-    slider_value = slider.get_value()  # Get the slider value here
-    spawn_plinko_ball(slider_value)    # Pass the slider value to spawn_plinko_ball
-
-def display_counts():
-    # Display total ball count
-    count_surface = font.render(f"Balls: {ballcount}", True, (255, 255, 255))  # White text
-    screen.blit(count_surface, (10, 10))  # Position the text at the top-left of the screen
-
-    # Display slot counts
-    for i in range(slot_count):
-        slot_count_surface = font.render(f"{slot_heights[i]}", True, (255, 255, 255))  # Slot count in white
-        slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
-        screen.blit(slot_count_surface, (slot_x - 10+25, screen.get_height() - 30))  # Adjust the y position
-def display_multiplicants():
-    for i in range(slot_count):
-        multiplier = font2.render(f"{slotmultiplylist[i]}", True, (255, 255, 255))  # Slot multiplier in white
-        slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
-        screen.blit(multiplier, (slot_x - 10 + 25, screen.get_height() -80 ))  # Adjust the y position
-def display_money():
-    # Display total money count
-    count_money = font.render(f"money: {total_money}", True, (255, 255, 255))  # White textoney
-    screen.blit(count_money, (120, 10))  # Position the text at the top-middle of the screen
-
-
-
-def draw_slots():
-    for i in range(slot_count):
-        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect((i * slot_width) +21, screen.get_height() - 100, slot_width, 100), 2)
-
-# Button class to spawn Plinko balls
-
-# Function to draw the slots at the bottom
 class Button:
     def __init__(self, x, y, width, height, buttonText="Click Me!", onclickFunction=None, onePress=False):
         self.x = 300
@@ -281,11 +289,6 @@ class Button:
             self.buttonRect.height / 2 - self.buttonSurf.get_rect().height / 2
         ])
         screen.blit(self.buttonSurface, self.buttonRect)
-            
-
-    
-
-# Create a button to spawn Plinko balls
 Button(150, 500, 200, 50, "Click Me!", on_button_click, False)
 
 class Slider:
@@ -330,7 +333,6 @@ class Slider:
                     # Update the slider value
                     self.val = self.min_val + (self.handle_rect.centerx - self.rect.x) / self.width * (self.max_val - self.min_val)
 
-# InputBox class to allow manual typing
 class InputBox:
     def __init__(self, x, y, w, h, font):
         self.rect = pygame.Rect(x, y, w, h)
@@ -369,11 +371,9 @@ class InputBox:
         screen.blit(self.text_surface, (self.rect.x + 5, self.rect.y + 5))
         pygame.draw.rect(screen, self.color, self.rect, 2)
 
-# Create the slider
-slider = Slider(350, 200, 100, 0, 100, 50)  # (x, y, width, min_val, max_val, initial_val)
-# Create the input box
-input_box = InputBox(350, 230, 100, 36, font)
-
+slider = Slider(350, 200, 100, 0, 100, 50)  #  een instance van een slider
+input_box = InputBox(350, 230, 100, 36, font) #instance van inputbox
+#region Simulation While loop
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -429,8 +429,7 @@ while running:
         allowplinko= 0
     if total_money > 0 and slider.get_value() < total_money:
         allowplinko =1
-
-
+       
     pygame.display.flip()
     fpsClock.tick(fps)
 
