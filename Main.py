@@ -11,6 +11,7 @@ clock = pygame.time.Clock()
 fps = 60
 fpsClock = pygame.time.Clock()
 font = pygame.font.SysFont("timesnewroman", 30)
+font2 =pygame.font.SysFont("timesnewroman", 10)
 running = True
 objects = []
 balls = []
@@ -19,6 +20,7 @@ gravity = 0.1
 spawnedplinko=0
 ballcount= 0
 total_money = 1000
+slotmultiplylist = [110,41,10,5,3,1.5,1,0.5,0.3,0.5,1,1.5,3,5,10,41,110]
 #to do 
 # meer commentaar invoegen, alle code logisch ordenen, score systeem bouwen, de data opslaan in een .json file, daarna verslag invoeren
 slot_count=17
@@ -135,13 +137,15 @@ class plinko_bal:
     def check_slot(self):
         global slot_heights
         global ballcount
+        global total_money
+        global slotmultiplylist
         if self.y + self.radius >= screen.get_height() -100:
             for i in range(slot_count):
                 if i * slot_width < self.x < (i + 1) * slot_width:
                     
                     self.in_slot = True
                     slot_heights[i] +=  1
-                    break
+                    total_money = total_money + self.value*slotmultiplylist[i]
 
             balls.remove(self)
             ballcount -= 1
@@ -218,10 +222,17 @@ def display_counts():
         slot_count_surface = font.render(f"{slot_heights[i]}", True, (255, 255, 255))  # Slot count in white
         slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
         screen.blit(slot_count_surface, (slot_x - 10+25, screen.get_height() - 30))  # Adjust the y position
+def display_multiplicants():
+    for i in range(slot_count):
+        multiplier = font2.render(f"{slotmultiplylist[i]}", True, (255, 255, 255))  # Slot multiplier in white
+        slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
+        screen.blit(multiplier, (slot_x - 10 + 25, screen.get_height() -80 ))  # Adjust the y position
 def display_money():
     # Display total money count
     count_money = font.render(f"money: {total_money}", True, (255, 255, 255))  # White textoney
     screen.blit(count_money, (120, 10))  # Position the text at the top-middle of the screen
+
+
 
 def draw_slots():
     for i in range(slot_count):
@@ -402,6 +413,7 @@ while running:
 
     # Display the ball count and slot counts
     display_counts()
+    display_multiplicants()
     display_money()
 
     # Process the buttons
