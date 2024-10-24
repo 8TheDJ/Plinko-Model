@@ -18,6 +18,7 @@ coordlist = []
 gravity = 0.1
 spawnedplinko=0
 ballcount= 0
+total_money = 1000
 #to do 
 # meer commentaar invoegen, alle code logisch ordenen, score systeem bouwen, de data opslaan in een .json file, daarna verslag invoeren
 slot_count=17
@@ -196,10 +197,12 @@ top_row_y = coordlist[2][1]  # The y-coordinate of the top row (third ball)
 # Function to spawn a new Plinko ball
 def spawn_plinko_ball(slider_value):
     global ballcount
+    global total_money
     slider_value = slider.get_value()  # Assuming there's a method to get the slider value
     new_ball = plinko_bal(randint(220, 255), 50,slider_value)
     balls.append(new_ball)
     ballcount += 1
+    total_money -= int(slider.get_value())
 
 def on_button_click():
     slider_value = slider.get_value()  # Get the slider value here
@@ -215,6 +218,10 @@ def display_counts():
         slot_count_surface = font.render(f"{slot_heights[i]}", True, (255, 255, 255))  # Slot count in white
         slot_x = i * slot_width + slot_width // 2  # Center the text in each slot
         screen.blit(slot_count_surface, (slot_x - 10+25, screen.get_height() - 30))  # Adjust the y position
+def display_money():
+    # Display total money count
+    count_money = font.render(f"money: {total_money}", True, (255, 255, 255))  # White textoney
+    screen.blit(count_money, (120, 10))  # Position the text at the top-middle of the screen
 
 def draw_slots():
     for i in range(slot_count):
@@ -395,6 +402,7 @@ while running:
 
     # Display the ball count and slot counts
     display_counts()
+    display_money()
 
     # Process the buttons
     for object in objects:
