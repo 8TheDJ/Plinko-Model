@@ -76,20 +76,29 @@ def reflect_velocity(ball, slope):
 
     # Reflect the velocity over the normal
     dot_product = ball.velocity_x * normal_x + ball.velocity_y * normal_y
-    ball.velocity_x -= 2 * dot_product * normal_x
-    ball.velocity_y -= 2 * dot_product * normal_y
+    ball.velocity_x -= 1.5 * dot_product * normal_x
+    ball.velocity_y -= 1.5 * dot_product * normal_y
 
-# Function to draw the rows of circles and update their positions for collision
 def draw_rows_of_circles(surface):
     rows_amount = 16
     spacing = 25  # Spacing between circles
+    width = spacing * rows_amount  # Total width of the pyramid
+    desired_ratio = 0.75862069
+    height = width * desired_ratio  # Total height for the desired ratio
+
+    # Calculate the y-spacing (vertical) based on Pythagoras
+    x_half_spacing = spacing / 2
+    y_spacing = sqrt(spacing ** 2 - x_half_spacing ** 2)
+    scale_factor = height / (y_spacing * rows_amount)
+    y_spacing *= scale_factor
+
     y_offset = surface.get_height() - ((rows_amount * spacing) / 4)  # Center the tower vertically
 
     for row in range(3, rows_amount + 3):
         x_start = (surface.get_width() - (row * spacing)) / 2
         for col in range(row):
             circle_x = x_start + col * spacing
-            circle_y = y_offset - (rows_amount + 3 - row) * spacing
+            circle_y = y_offset - (rows_amount + 3 - row) * y_spacing
             coordlist.append((circle_x, circle_y))  # Store the circle positions for collision detection
             pygame.draw.circle(surface, "white", (int(circle_x), int(circle_y)), circle_radius)
 
