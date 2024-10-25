@@ -1,11 +1,12 @@
 #region libraries
-from math import * # importeren alles van de library math
-from random import * # importeren alles van de library random
-import pygame # importeren van de library pygame
-import sys # importeren van de library system
-import os # importeren van de library OperatingSystem
-import json # importeren van de library json
-import time # importeren van de library time
+#libraries importeren
+from math import * 
+from random import * 
+import pygame 
+import sys 
+import os 
+import json 
+import time 
 #region Constanten en variabelen 
 circle_radius = 3  # Radius van elke witte pin
 pygame.init() # initialisatie van pygame
@@ -345,7 +346,7 @@ class InputBox:# class van inputbox, waarmee je de waarde van de slider manually
             else:
                 self.active = False
 
-        if event.type == pygame.KEYDOWN:
+        if event.type == pygame.KEYDOWN: #wat er gebeurd als je typt in de input_value
             if self.active:
                 if event.key == pygame.K_RETURN:
                     # value getyped retourneren
