@@ -12,25 +12,25 @@ pygame.init() # initialisatie van pygame
 screen_width = 727  # scherm breedte
 screen_height = 650  # scherm hoogte
 screen = pygame.display.set_mode((screen_width, screen_height)) # instantie van het scherm waarop de simulatie plaats vindt
-fps = 60 # de framerate per seconden
-fpsClock = pygame.time.Clock() # Een clock die de framerate gebruikt, eigenlijk de delta tijd van de simulatie, maar in pygame heet het anders, FPS staat voor FramePerSecond een vaak gebruikte term in games voor het aantal frames dat je per seconden ziet.
+fps = 60 # de frames per seconden
+fpsClock = pygame.time.Clock() # Een clock die de framerate gebruikt, eigenlijk de delta tijd van de simulatie, maar in pygame heet het anders, FPS staat voor FramesPerSecond een vaak gebruikte term in games voor het aantal frames dat je per seconden ziet.
 font = pygame.font.SysFont("timesnewroman", 30) # een font om te gebruiken, het komt veel voor in de code, dus hebben het hier gedefined.
-font2 =pygame.font.SysFont("timesnewroman", 10) # een font om te gebruiken, het komt veel voor in de code, dus hebben het hier gedefined.
+font2 =pygame.font.SysFont("timesnewroman", 10) # een font om te gebruiken, gebruikt voor de vermenigvuldigingswaarde voor op de slots.
 running = True #Inplaats van een while true loop hebben we een while running loop van gemaakt en running gelijk aan True gezet, dit maakte alles iets meer logisch en overzichtelijk.
 objects = [] # Een lijst voor objecten, in dit geval gebruikt voor buttons, waarvan we er maar 1 gebruiken
 balls = [] # een lijst van alle plinko ballen in het spel, er wordt een nieuwe instantie gemaakt met spawn_plinko_ball(), en later ook in de check_slot functie in de class plinko_ball geremoved als hij een slot raakt.
 coordlist = [] # een zeer belangrijke list, de coordinaten van de witte pins worden hier opgeslagen, wij hebben met behulp van bepaalde punten uit deze lijst die wij uitgezocht hebben wiskundige formules voor de borders opgesteld
 gravity = 0.1 # de zwaarte kracht voor de natuurkundige krachten die wij hebben toegevoegd, dit is een constante omdat de zwaarte kracht niet gaat veranderen.
-ballcount= 0 # houd het huidige aantal ballen in het spel bij, word geupdate als een bal het slot raakt bij de functie check_slot en er wordt een bal toegevoegd wanneer spawn_plinkobal() gecalled wordt door op de button te clicken 
+ballcount= 0 # houdt het huidige aantal ballen in het spel bij, word geupdate als een bal het slot raakt bij de functie check_slot en er wordt een bal toegevoegd wanneer spawn_plinkobal() gecalled wordt door op de button te clicken 
 total_money = 1000 # het begin aantal geld dat de speler krijgt aan het begin van het spel
-slotmultiplylist = [110,41,10,5,3,1.5,1,0.5,0.3,0.5,1,1.5,3,5,10,41,110] # de multipliers voor de slots, zodat de speler iets kan winnen
+slotmultiplylist = [110,41,10,5,3,1.5,1,0.5,0.3,0.5,1,1.5,3,5,10,41,110] # de multipliers voor de slots, de inzet van de player op een plinkobal wordt vermenigvuldigd met de corresponderende waarde waarin het landt.
 allowplinko = 1 # Gebruikt als controle, zodat je geen plinko ballen in kan spawnen als je geen geldt hebt, dat wordt deze variabele naar 0 gezet en gaat pas weer naar 1 als er genoeg geld is om nog een plinko bal te spawnen.
 slot_count=17 # Het aantal slots dat we gebruiken, dat gebaseerd is op het aantal gaten tussen de laatste rij pins, zodat de pingaten en de slots matchen
 totalwidth= 450 # de totale breedte van alle slots
 slot_width= 25.65 # De slot breedte, vroeger calculeerde we dit, maar we kwamen nooit goed uit, dus we hebben dit benaderd en kwamen hier op uit. Dit is wat we gebruikten voor de bepaliong: totalwidth // slot_count
 slot_heights = [0] * slot_count # De definitie voor de lijst waar alle slots in staan van 0 tot 16, dus in totaal 17
 slot_data_file = "plinko_slot_data.json" # De naam van de Json file waar we alle data opslaan
-slot_hits = {i: 0 for i in range(slot_count)} # Een dictionairy om alle hits op alle slots vast te leggen
+slot_hits = {i: 0 for i in range(slot_count)} # Een dictionairy om alle hits voor elke slot vast te leggen
 #region functions 
 def draw_slots(): # deze functie tekent de slots op het scherm
     for i in range(slot_count): # het lopen door alle slots, zodat alle 17 slots getekent worden op het scherm
@@ -75,15 +75,16 @@ def reflect_velocity(ball, slope): # Functie om de ball te laten bouncen, door d
     dot_product = ball.velocity_x * normal_x + ball.velocity_y * normal_y # tussen product zodat de code makkelijker te lezen is
     ball.velocity_x -= 1.5 * dot_product * normal_x # het omdraaien van de snelheid in de x richting
     ball.velocity_y -= 1.5 * dot_product * normal_y# het omdraaien van de snelheid in de y richting
+
 def draw_rows_of_circles(surface): # Functie om de witte pins op het scherm te tekenen
-    rows_amount = 16 # aantal rijen cirkels dat wij uiteindelijk wilde hebben
-    spacing = 25  # de ruimte tussen de cirkels
-    width = spacing * rows_amount  # totale breedte van de driehoek
-    desired_ratio = 0.75862069 # Tussen stap van een constante opslaan voor overzichtelijkheid
-    height = width * desired_ratio  # Totale hooghte berkend door de ratio die wij wilden keer de breedte van de pyramide
+    rows_amount = 16 # aantal rijen cirkels/pins dat wij uiteindelijk wilden hebben
+    spacing = 25  # de ruimte tussen de elke pin
+    width = spacing * rows_amount  # totale breedte van de driehoek van pins
+    desired_ratio = 0.75862069 # een verhouding van 1 op 0.75862069 hebben tussen de x en y om een zo realistisch mogelijke driehoek pins te hebben. deze verhouding is vergelijkbaar met die van het online-plinko spel.
+    height = width * desired_ratio  # Totale hoogte berekend door de verhouding die wij wilden keer de breedte van de pyramide
 
     # Het berekenen van de ruimte in de y richting op basis van pythogoras
-    x_half_spacing = spacing / 2 # x half spacing is dus de ruimte gedeeld door 2
+    x_half_spacing = spacing / 2 # berekening van x_half_spacing
     y_spacing = sqrt(spacing ** 2 - x_half_spacing ** 2) # Ruimte in de y richting berekend door pythogoras
     scale_factor = height / (y_spacing * rows_amount) # De factor die we zo meteen gebruiken om 
     y_spacing *= scale_factor # Y ruimte keer de scale factor
@@ -101,7 +102,8 @@ def draw_rows_of_circles(surface): # Functie om de witte pins op het scherm te t
 # Tekenen van circles om ze later om te draaien
 draw_surface = pygame.Surface(screen.get_size()) #het defineren van een tekenen oppervlak door de screensize te bepalen en op te slaan.
 draw_rows_of_circles(draw_surface) # het tekenen van de witte pins op het teken oppervlak, dat het scherm is.
-# Het berekenen van de lineaire vergelijkingen voor de borders langs de driehoek, doormideel van twee coordinaten uit de lijst van pins.
+
+# Het berekenen van de lineaire vergelijkingen voor de borders langs de driehoek, door middel van twee coordinaten uit de lijst van pins.
 left_slope, left_intercept = calculate_line_equation(coordlist[0], coordlist[3]) # het berkenen van de linkerlijn zijn richtingcoéfficiënt en startgetal, dat uiteindelijk de linker border zal worden
 right_slope, right_intercept = calculate_line_equation(coordlist[2], coordlist[6])# het berkenen van de rechterlijn zijn richtingcoéfficiënt en startgetal, dat uiteindelijk de rechter border zal worden
 left_vertical_x = coordlist[0][0]  # x-coordinate van de eerste bal
@@ -110,10 +112,11 @@ leftside_vertical_x = 0 # een vergelijking voor een verticale border, de border 
 rightside_vertical_x = 727 # een vergelijking voor een verticale border, de border wordt later in de code geïnitialiseert
 top_y = 0  # y-coordinate van de top van het scherm
 top_row_y = coordlist[2][1]  # The y-coordinate van de bovenste row (third ball)
+
 def spawn_plinko_ball(slider_value): # Functie om een plinko ball te spawnen, deze functie wordt gecalled/gebruikt door de button
     global ballcount, total_money # het callen van globals, zodat ze door de hele code gebruikt kunnen worden
-    if allowplinko == 1: # Als je genoeg geld hebt voldoe je aan deze voorwarde en mag je een nieuwe plinko ball spawnen
-        slider_value = slider.get_value()  # Assuming there's a method to get the slider value
+    if allowplinko == 1: # Als je genoeg geld hebt, voldoe je aan deze voorwarde en mag je een nieuwe plinko ball spawnen
+        slider_value = slider.get_value()  # slider value opslaan in een variabele
         new_ball = plinko_bal(randint(220, 255)+(227/2), 50,slider_value) # initialisatie van een nieuwe plinko ball op een random locatie tussen de x coordinaten 220 en 225 en met y coordinaat 50, met een value die door de slider bepaald wordt
         balls.append(new_ball) # nieuwe plinko ball op de lijst van actieve ballen in het spel
         ballcount += 1 # Ook voor de display wordt er een ball toegevoegd
@@ -159,13 +162,13 @@ class plinko_bal: # De class plinko ball
         self.stuck_threshold = 5  # Het aantal frames wanneer het programma checked of de bal vast zit.
         self.in_slot = False  # om te checken of de ball in een slot is aangekomen hebben we deze variabele die naar true wordt gezet als dit het geval is.
 
-    def update(self): # een fucntie om de ball positie bij te houden en te detecteren of hij vast zit
+    def update(self): # een functie om alle updates en veranderingen van de bal vast te leggen.
         self.previous_positions.append((self.x, self.y)) # Vorige posties bijvoegen
         if len(self.previous_positions) > self.stuck_threshold: # Als hij dus langer de treshold is gehaald wordt de vorige positie weg gehaald
             self.previous_positions.pop(0) # het weghalen van de laatste positie uit de lijst.
 
-        if self.is_stuck(): # kijken of de bal vast zit
-            self.nudge_ball() # de bal een duwtje geven zodat hij niet meer vast zit
+        if self.is_stuck(): # kijken of de bal vast zit boven een van de pins
+            self.nudge_ball() # de bal een duwtje geven zodat hij niet meer vast zit op de pin
 
         self.velocity_y += gravity # Het toeveogen van zwaartekracht aan de y snelheid van de bal 
         # Update the ball's position
@@ -193,14 +196,14 @@ class plinko_bal: # De class plinko ball
                 self.x += normal_x * 0.1
                 self.y += normal_y * 0.1
 
-        # Checken voor collision met de onzichtbare borders
+        # Checken voor collision met de onzichtbare borders, zodat bal niet uit de piramide of frame valt.
         if (is_on_line(self.x, self.y, left_slope, left_intercept) or is_on_line(self.x, self.y, right_slope, right_intercept)) and (self.x > 256+(227/2) or self.x < 219+(227/2)): # als je op deze lijn de andere lijn bent stuiter dan de andere kant op,  Feielijk staan ern 4 vergelijkingen, die twee om de driehoek en 2 verticale om de spawn box, zodat ze niet buiten de driehoek stuiteren nadat ze gespawned zijn,
             if (is_on_line(self.x, self.y, left_slope, left_intercept) and self.x < coordlist[0][0]):
                 reflect_velocity(self, left_slope)
             elif (is_on_line(self.x, self.y, right_slope, right_intercept) and self.x > coordlist[2][0]): # als je op deze lijn de andere lijn bent stuiter dan de andere kant op
                 reflect_velocity(self, right_slope)
 
-            # Apply a small offset to prevent continuous collisions with the line
+            # de bal lichtelijk laten stuiteren van de border zodat hij niet blijft colliden met de border.
             self.x += self.velocity_x * 0.1
             self.y += self.velocity_y * 0.1
 
@@ -221,10 +224,10 @@ class plinko_bal: # De class plinko ball
                 if (i+5) * slot_width < self.x < ((i+6) * slot_width): #voorwaarde om te bepalen of iets in slot zit of niet
                     self.in_slot = True # dan zit de bal in het slot dus is deze waarde true
                     slot_heights[i] +=  1 # 
-                    slot_hits[i] = slot_heights[i] # vaststellen van  aantal hits in een slot
+                    slot_hits[i] = slot_heights[i] # vaststellen van aantal hits in een slot
                     total_money = total_money + self.value*slotmultiplylist[i] # totaal aantal geld updaten nadat de bal in een slot met een multiplier is gekomen
 
-            balls.remove(self) # de bal verwijderd zichzelf dan
+            balls.remove(self) # de bal verwijderd zichzelf wanneer het in een slot belandt.
             ballcount -= 1 # De actieve bal count gaat met 1 naar beneden
     def is_stuck(self): # een functie om te kijken of de bal in ongeveer dezelfde positie is voor een aantal frames
         if len(self.previous_positions) < self.stuck_threshold: # als de lengte van de lijst vorige posities kleiner is dan de threshhold doe het volgende
@@ -243,7 +246,7 @@ class plinko_bal: # De class plinko ball
         surface.blit(value_text, (self.x - self.radius, self.y - self.radius))  #centreren op de bal
 
 class Button: # class button
-    def __init__(self, x, y, width, height, buttonText="Click Me!", onclickFunction=None, onePress=False): #initialisatie van de met de eigenschappen waarmee een button kan beginnen
+    def __init__(self, x, y, width, height, buttonText="Click Me!", onclickFunction=None, onePress=False): #initialisatie van de eigenschappen waarmee een button kan beginnen
         # De eigenschappen spreken voor zichzelf tenzij toegelicht
         self.x = 300+(227/2)
         self.y = 10
@@ -263,10 +266,10 @@ class Button: # class button
         self.buttonSurf = font.render(buttonText, True, (0, 0, 0)) # het renderen van de button
         objects.append(self) # aan de actieve objecten lijst toevoegen
 
-    def process(self):# Itay ik heb geen idee wat dit doet fix dit ff
-        mousePos = pygame.mouse.get_pos()
+    def process(self):# Process van de button klikken
+        mousePos = pygame.mouse.get_pos() #positie muis krijgen
         self.buttonSurface.fill(self.fillColors['normal'])
-        if self.buttonRect.collidepoint(mousePos):
+        if self.buttonRect.collidepoint(mousePos): # wat er gebeurd als de muis hovert of klikt op de knop
             self.buttonSurface.fill(self.fillColors['hover'])
             if pygame.mouse.get_pressed(num_buttons=3)[0]:
                 self.buttonSurface.fill(self.fillColors['pressed'])
@@ -281,8 +284,9 @@ class Button: # class button
         ])
         screen.blit(self.buttonSurface, self.buttonRect) # op het scherm tekenen van de button
 Button(150, 500, 200, 50, "Click Me!", on_button_click, False) # instantie van Button, die plinko balls spawned
-class Slider:# itay mag dit ook doen
-    def __init__(self, x, y, width, min_val, max_val, start_val):
+class Slider:# Class van de slider die de value van de plinko bal bepaald
+    def __init__(self, x, y, width, min_val, max_val, start_val): #initialisatie van de eigenschappen waarmee een slider kan beginnen
+        #waardes voor slider
         self.rect = pygame.Rect(x, y, width, 10)
         self.min_val = min_val
         self.max_val = max_val
@@ -293,20 +297,20 @@ class Slider:# itay mag dit ook doen
         self.dragging = False
 
     def get_value(self):
-        return self.val
+        return self.val 
 
     def set_value(self, new_value):
-        self.val = round(max(self.min_val, min(self.max_val, new_value)))  # Clamp between min and max
+        self.val = round(max(self.min_val, min(self.max_val, new_value)))  # Zorgen dat de value tussen het minimale en maximale zit
         self.handle_rect.centerx = self.rect.x + (self.val - self.min_val) / (self.max_val - self.min_val) * self.width
 
-    def draw(self, screen):
+    def draw(self, screen): #slider tekenen op het scherm
         # Draw slider line
-        pygame.draw.rect(screen, (255, 255, 255), self.rect)
+        pygame.draw.rect(screen, (255, 255, 255), self.rect) #de lijn aspect van de slider
         # Draw handle
-        pygame.draw.ellipse(screen, (0, 255, 0), self.handle_rect)
+        pygame.draw.ellipse(screen, (0, 255, 0), self.handle_rect) #het rondje dat geslide wordt
 
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
+    def handle_event(self, event): # 
+        if event.type == pygame.MOUSEBUTTONDOWN: 
             if self.handle_rect.collidepoint(event.pos):
                 self.dragging = True
 
@@ -315,16 +319,17 @@ class Slider:# itay mag dit ook doen
 
         elif event.type == pygame.MOUSEMOTION:
             if self.dragging:
-                # Update handle position based on mouse position
+                # De positie van het balletje op de slider veranderen ter gevolge van de verandering van de positie van de mousemotion
                 mouse_x = event.pos[0]
-                # Constrain handle within the slider bounds
+                # zorgen dat het balltje op de slider niet buiten de rectangle/lijn gaat
                 if self.rect.x <= mouse_x <= self.rect.x + self.width:
                     self.handle_rect.centerx = mouse_x
-                    # Update the slider value
+                    # slider value updaten nadat het is geslide naar iets anders
                     self.val = self.min_val + (self.handle_rect.centerx - self.rect.x) / self.width * (self.max_val - self.min_val)
-slider = Slider(350+(227/2), 200, 100, 0, 100, 50)  #instantie van een slider aangemaakt, die het geld per bal bepaald
-class InputBox:# itay dit ook doen aub
-    def __init__(self, x, y, w, h, font):
+slider = Slider(350+(227/2), 200, 100, 0, 100, 50)  #instantie van een slider aangemaakt, die de value/ het geld per plinkobal bepaald
+class InputBox:# class van inputbox, waarmee je de waarde van de slider manually kan aanpassen.
+    def __init__(self, x, y, w, h, font): #initialisatie van de eigenschappen waarmee een inputbox kan beginnen
+        #waardes voor inputbox
         self.rect = pygame.Rect(x, y, w, h)
         self.color = (255, 255, 255)
         self.text = ''
@@ -332,7 +337,7 @@ class InputBox:# itay dit ook doen aub
         self.active = False
         self.text_surface = font.render(self.text, True, self.color)
 
-    def handle_event(self, event):
+    def handle_event(self, event): #checken of er op de inputbox wordt geclickt (als er wordt geclicked op de box kun je erin typen)
         if event.type == pygame.MOUSEBUTTONDOWN:
             # Toggle the input box's active state
             if self.rect.collidepoint(event.pos):
@@ -343,7 +348,7 @@ class InputBox:# itay dit ook doen aub
         if event.type == pygame.KEYDOWN:
             if self.active:
                 if event.key == pygame.K_RETURN:
-                    # Return the value typed by the user
+                    # value getyped retourneren
                     try:
                         return int(self.text)
                     except ValueError:
@@ -356,24 +361,24 @@ class InputBox:# itay dit ook doen aub
         # Re-render the text
         self.text_surface = self.font.render(self.text, True, self.color)
 
-    def draw(self, screen):
+    def draw(self, screen): #inputbox tekenen op het scherm
         # Blit the text on the input box
         screen.blit(self.text_surface, (self.rect.x + 5, self.rect.y + 5))
         pygame.draw.rect(screen, self.color, self.rect, 2)
 input_box = InputBox(350+(227/2), 230, 100, 36, font) #instantie van een InputBox, waarin je de waarde van een bal kan invoeren als de slider niet voldoet.
 #region running game
 while running: # de while loop die de game blijft runnen
-    for event in pygame.event.get(): #?
+    for event in pygame.event.get(): #events
         if event.type == pygame.QUIT: #Als je de applicatie wilt stoppen stop de aplicatie
             running = False
         # Handle events voor de slider
         slider.handle_event(event)
         # Handle input voor de input doos
         typed_value = input_box.handle_event(event)
-         # Als de speler een juiste input geeft, update de input dan
+         # getypde gegevens in de inputbox zetten als slider value
         if typed_value is not None: 
             slider.set_value(typed_value)
-        # Teken de doos
+        # Teken de input
         input_box.draw(screen)
 
     screen.fill("black") # achtergrond zwart
